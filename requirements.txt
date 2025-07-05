@@ -31,3 +31,6 @@ sentence-transformers
 
 # pytorch
 torch==2.7.1
+
+# crawler
+bs4
