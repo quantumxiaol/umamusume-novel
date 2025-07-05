@@ -1,6 +1,12 @@
 # 目的
 
-使用RAG增强LLM的能力。
+要让LLM能够创作符合人设的赛马娘怪文书的同人文，有以下几种思路：
+
+- 使用足够多的怪文书语料微调开源大模型
+- 使用RAG的方式给LLM提供相关角色的人设
+- 使用function call 的方法在LLM创作前先爬取相关的网页，包括角色设定、优秀的怪文书样例等
+
+下面是使用RAG的方法进行怪文书写作的示例。
 
 ## ENV
 
@@ -18,7 +24,9 @@ uv
 
 将.env.template复制为.env，修改其中的API_KEY。LLM，
 
-我测试时使用QWEN，和OPENAI的格式是兼容的。直接修改API_KEY和BASE_URL即可，不用管前缀。
+我测试时使用QWEN，和OPENAI的格式是兼容的。如果要使用OPENAI，直接修改QWEN_MODEL_NAME等即可，不用管前缀和下面的OPENAI_API_KEY。
+
+QWEN的API在[官网](https://bailian.console.aliyun.com/?tab=model#/model-market)中获取，免费也是有不少额度的。
 
 ## 运行
 
