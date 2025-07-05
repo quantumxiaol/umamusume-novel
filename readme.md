@@ -25,6 +25,13 @@ uv
 
 赛马娘怪文书写作
 
+在终端1中运行`python ./umamusume_create_novel.py`开启服务器
+在终端2中运行`python ./umamusume_client.py`测试
+
+## 结果
+
+[result](result.md)
+
 ## 概念
 
 ### ‌RAG（Retrieval Augmented Generation）
