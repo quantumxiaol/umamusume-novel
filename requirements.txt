@@ -1,5 +1,5 @@
 # Python 3.12
-# conda create -n agentLearning python=3.12
+# conda create -n umamusume-novel python=3.12
 # uv venv --python 3.12.0
 # pip install -r requirements.txt
 

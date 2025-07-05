@@ -2,9 +2,19 @@
 
 使用RAG增强LLM的能力。
 
-        pip install chromadb
-        pip install faiss-cpu
-        pip install sentence-transformers
+## ENV
+
+conda
+
+        conda create -n umamusume-novel python=3.12
+        conda activate umamusume-novel
+        pip install -r requirements.txt
+
+uv
+
+        uv venv --python 3.12.0
+        uv sync
+
 
 ## 运行
 
