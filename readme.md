@@ -16,6 +16,10 @@ uv
         uv sync
 
 
+将.env.template复制为.env，修改其中的API_KEY。LLM，
+
+我测试时使用QWEN，和OPENAI的格式是兼容的。直接修改API_KEY和BASE_URL即可，不用管前缀。
+
 ## 运行
 
 赛马娘基础知识问答
@@ -24,6 +28,8 @@ uv
 在终端2中运行`python ./umamusume_client.py`测试
 
 赛马娘怪文书写作
+
+在./docs/web_lists.txt中添加网站，一行一个，可以添加一些马娘的萌娘百科等网址，如果需要登录的网站抓不了。默认是通过本地代理访问的，因为大陆连不上萌娘百科。
 
 在终端1中运行`python ./umamusume_create_novel.py`开启服务器
 在终端2中运行`python ./umamusume_client.py`测试
