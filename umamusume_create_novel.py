@@ -123,6 +123,7 @@ texts=[metadata_doc] + csv_documents+docs
 
 hf_embedding_model = HuggingFaceEmbeddings(
     model_name=os.getenv("HF_Embedding_Model"),
+    # model_name="Qwen/Qwen3-Embedding-0.6B",
     model_kwargs = {'device': 'cpu'},
     encode_kwargs = {'normalize_embeddings': True}
     )
