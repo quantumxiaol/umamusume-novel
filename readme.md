@@ -19,6 +19,7 @@ conda
 uv
 
         uv venv --python 3.12.0
+        source .venv/bin/activate
         uv sync
 
 
