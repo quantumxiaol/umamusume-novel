@@ -66,7 +66,8 @@ from langchain_core.runnables import RunnableMap, RunnableLambda
 # from langchain.embeddings import HuggingFaceEmbeddings
 # from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain.agents import create_react_agent, AgentExecutor
+from langchain.agents import  AgentExecutor
+from langgraph.prebuilt import create_react_agent
 from langchain_core.tools import BaseTool
 from typing import Optional
 from langchain.prompts import MessagesPlaceholder
@@ -77,7 +78,8 @@ from dotenv import load_dotenv
 
 from WEB import get_urls,proxies
 
-
+rag_url = None
+web_url = None
 
 load_dotenv(".env")
 
@@ -115,91 +117,59 @@ class AnswerResponse(BaseModel):
     answer: str
 
 
-# 全局变量保存 agent_executor
-# 全局变量
-agent_executor_rag = None
-agent_executor_web = None
-
-async def initialize_agent(rag_url,web_url):
-    global agent_executor_rag
-    global agent_executor_web
-    rag_prompt = PromptTemplate.from_template(
-        "请根据以下问题查询相关信息: {input}"
-    )
-    web_prompt = PromptTemplate.from_template(
-        "基于以下背景信息回答问题: {input}"
-    )
-    # 初始化 RAG Agent
-    async with sse_client(rag_url) as (read, write):
-        print(f'RAG MCP 连接成功: {rag_url}')
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            print(f'RAG MCP session已初始化')
-
-            # 加载 RAG 工具
-            rag_tools = await load_mcp_tools(session)
-            print("RAG可用MCP工具:", [tool.name for tool in rag_tools])
-
-            # 创建 RAG Agent
-            rag_agent = create_react_agent(llm=model, tools=rag_tools,prompt=rag_prompt)
-            agent_executor_rag = AgentExecutor(agent=rag_agent, tools=rag_tools, verbose=True)
-            print("RAG Agent 初始化完成")
-
-    # 初始化 Web Agent
-    async with sse_client(web_url) as (read, write):
-        print(f'Web MCP 连接成功: {web_url}')
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            print(f'Web MCP session已初始化')
-
-            # 加载 Web 工具
-            web_tools = await load_mcp_tools(session)
-            print("Web可用MCP工具:", [tool.name for tool in web_tools])
-
-            # 创建 Web Agent
-            web_agent = create_react_agent(llm=model, tools=web_tools,prompt=web_prompt)
-            agent_executor_web = AgentExecutor(agent=web_agent, tools=web_tools, verbose=True)
-            print("Web Agent 初始化完成")
-
-
 # 提供查询接口 http://127.0.0.1:1145/ask
 @app.post("/ask", response_model=AnswerResponse)
 async def ask_question(request: QuestionRequest):
-    if agent_executor_rag is None or agent_executor_web is None:
-        raise HTTPException(status_code=500, detail="Agent 未初始化，请先启动 MCP 连接")
+    user_question = str(request.question) if request.question else ""
+    print(f"用户问题：{user_question}")
+
+
 
     try:
-        user_question = str(request.question) if request.question else ""
-        first_input = f"""
-                请根据用户问题，先使用RAG查询本地的相关角色的信息：
-                用户问题：{user_question}
-                你返回角色的相关信息。
-                """
-        print(f"用户问题：{user_question}")
-
         # 第一阶段：使用 RAG Agent 获取基础信息
-        rag_result = await agent_executor_rag.ainvoke({
-            "input": first_input,
-        })
-        base_info = rag_result.get("output", "")
-        print(f"[第一阶段结果] 基础信息: {base_info}")
+        async with sse_client(rag_url) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                rag_tools = await load_mcp_tools(session)
+                print("RAG可用MCP工具:", [tool.name for tool in rag_tools])
 
-        # 第二阶段：将原始问题 + 基础信息输入到 Web Agent
-        final_input = f"""
-        用户问题: {user_question}
-        
-        已知基础信息如下：
-        {base_info}
-        
-        请结合上述信息和你的网络能力，给出更全面的回答。
-        """
-        web_result = await agent_executor_web.ainvoke({
-            "input": final_input,
-        })
-        final_answer = web_result.get("output", "未能生成有效回答。")
-        print(f"[第二阶段结果] 最终回答: {final_answer}")
+                rag_agent = create_react_agent(model, rag_tools)
 
-        return AnswerResponse(answer=final_answer)
+                first_input = f"""
+                用户问题：{user_question}
+                
+                请先使用 RAG 工具查找与赛马娘角色相关的资料，尤其是关于她的名称、背景等信息。
+                RAG搜索时，传入的名称应该是中文名称。
+                返回角色的准确资料。
+                在此阶段***不需要创作小说***，返回资料即可。
+                """
+                rag_result = await rag_agent.ainvoke({"messages": [HumanMessage(content=first_input)]})
+                base_info = rag_result["messages"][-1].content
+                print(f"[第一阶段结果] 基础信息: {base_info}")
+
+        # 第二阶段：使用 Web Agent 结合基础信息回答问题
+        async with sse_client(web_url) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                web_tools = await load_mcp_tools(session)
+                print("Web可用MCP工具:", [tool.name for tool in web_tools])
+
+                web_agent = create_react_agent(model, web_tools)
+
+                final_input = f"""
+                用户问题: {user_question}
+
+                已知基础信息如下：
+                {base_info}
+
+                请结合上述信息和你的网络能力，写一篇甜甜的同人文。
+                """
+                web_result = await web_agent.ainvoke({"messages": [HumanMessage(content=final_input)]})
+                final_answer = web_result["messages"][-1].content
+
+                print(f"[第二阶段结果] 最终回答: {final_answer}")
+
+                return AnswerResponse(answer=final_answer)
 
     except Exception as e:
         print(f"Error during processing: {e}")
@@ -217,7 +187,8 @@ if __name__ == "__main__":
                      help="RAG MCP 服务器地址")
     arg.add_argument("-p","--port", type=int, default=1111)
     args=arg.parse_args()
-    asyncio.run(initialize_agent(rag_url=args.rag_mcp_server_url,web_url=args.web_mcp_server_url))
+    rag_url=args.rag_mcp_server_url
+    web_url=args.web_mcp_server_url
     uvicorn.run(app, host="0.0.0.0", port=args.port,
                 # reload=True
                 )
