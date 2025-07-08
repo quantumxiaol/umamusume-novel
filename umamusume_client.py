@@ -1,3 +1,12 @@
+"""
+Run
+    Terminal:
+        python umamusume_client.py -u http://127.0.0.1:1111/ask
+
+
+    帮我创作一篇爱慕织姬的甜甜的同人文，你可以先去wiki上搜索相关角色的信息，据此创作符合性格的同人小说
+"""
+
 import requests
 from langchain.memory import ConversationBufferMemory
 from langchain_openai import ChatOpenAI
@@ -5,8 +14,8 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnablePassthrough
-
-import os,sys
+from langchain_core.runnables import RunnableLambda
+import os,sys,argparse
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -24,7 +33,7 @@ llm = ChatOpenAI(
 # 设置服务端地址
 url = "http://127.0.0.1:1145/ask"
 
-def ask_question(question: str):
+def ask_question(question: str,url: str):
     """
     发送问题到服务端，并获取回答。
     
@@ -43,13 +52,15 @@ def ask_question(question: str):
         if response.status_code == 200:
             answer = response.json().get("answer")
             # print(f"Answer: {answer}")
-            return answer or ""
+            return str(answer) if answer is not None else ""
         else:
             print(f"Error: Received status code {response.status_code}")
             print(f"Response: {response.text}")
+            return "Error internal Server Error"
             
     except requests.RequestException as e:
         print(f"Request failed: {e}")
+        return "Error internal Server Error"
 # 构建 Prompt 模板（用于包装用户问题 + 历史记录）
 prompt = ChatPromptTemplate.from_messages([
     ("system", "你是一个对话机器人助手。请根据以下历史对话和当前问题给出回答。\n\n历史对话:\n{history}\n\n当前问题:\n{input}"),
@@ -57,33 +68,54 @@ prompt = ChatPromptTemplate.from_messages([
 ])
 
 # 创建处理链：将 prompt 格式化后传给 ask_question 函数（模拟LLM）
-def format_and_query(input_dict):
-    formatted_prompt = prompt.invoke(input_dict)
-    messages = formatted_prompt.to_messages()
+def format_and_query(input_dict, server_url):
+    # 手动提取历史消息并转换为字符串
+    raw_history = input_dict.get("history", [])
     
-    # 提取用户问题
-    user_input = input_dict["input"]
-    
-    # 提取历史记录并构造上下文
-    history = "\n".join([f"{msg.type}: {msg.content}" for msg in input_dict["history"]])
-    full_prompt = f"历史对话:\n{history}\n\n当前问题:\n{user_input}"
-    
-    # 调用远程服务
-    answer = ask_question(full_prompt)
-    
-    return answer
+    history_lines = []
+    for msg in raw_history:
+        content = msg.content
+        if isinstance(content, dict):  # 如果是 dict，只取 content 字段
+            content = content.get("content", "")
+        elif not isinstance(content, str):  # 其他非字符串也转成字符串
+            content = str(content)
+        
+        history_lines.append(f"{msg.type}: {content}")
 
-chain = (
-    {
-        "input": lambda x: x["input"],
-        "history": lambda _: memory.chat_memory.messages,
-    }
-    | RunnablePassthrough.assign(context=format_and_query)
-)
+    history_str = "\n".join(history_lines)
+    user_input = input_dict["input"]
+
+    full_prompt = f"""
+                    你是一个助手，请根据以下历史对话和当前问题给出回答。
+
+                    历史对话:
+                    {history_str}
+
+                    当前问题:
+                    {user_input}
+                    """
+
+    # print("Full Prompt Type", full_prompt.__class__)
+    # print("Full Prompt Sample:\n", full_prompt[:300] + "...")
+
+    return ask_question(full_prompt, server_url)
+
 
 if __name__ == "__main__":
+    arg=argparse.ArgumentParser()
+    arg.add_argument("--server_url","-u", type=str, default="http://127.0.0.1:1145/ask")
+    arg.add_argument("--question","-q", type=str, default="创作米浴（Rice Shower）的同人文，请先去wiki上搜索相关角色的信息，据此创作符合性格的同人小说")
+    args=arg.parse_args()
     print("开始对话！输入 'exit' 退出。\n")
-
+    chain = (
+        {
+            "input": lambda x: x["input"],
+            "history": lambda _: memory.chat_memory.messages,
+        }
+        | RunnablePassthrough.assign(
+            context=RunnableLambda(lambda x: format_and_query(x, args.server_url))
+        )
+    )
     while True:
         user_input = input("You: ")
         if user_input.lower() in ["exit", "quit"]:

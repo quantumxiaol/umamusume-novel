@@ -1,3 +1,13 @@
+"""
+Run
+    Terminal1:
+    python umamusume_query.py -p 1122
+    Terminal2:
+    python umamusume_client.py -u http://127.0.0.1:1122/ask
+
+"""
+
+
 import io
 import os
 import sys
