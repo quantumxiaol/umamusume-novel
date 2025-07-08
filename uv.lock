@@ -1181,6 +1181,20 @@ wheels = [
 ]
 
 [[package]]
+name = "langchain-mcp-adapters"
+version = "0.1.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "langchain-core" },
+    { name = "mcp" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8a/f2/f61eef5dc4b7e2bbb65ea904d59b96bd36c7017265c8e4a99c23688771cd/langchain_mcp_adapters-0.1.8.tar.gz", hash = "sha256:5fc6a596b73be96198135a11707102e3a7e9470b4d149bbbb1c9f9d902e0fa42", size = 20750, upload-time = "2025-06-30T19:28:46.578Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/25/28/86e7abd8ca1ba9057556d1b3c562f61fa068eb59ca7f74aea0dbc1c58115/langchain_mcp_adapters-0.1.8-py3-none-any.whl", hash = "sha256:037323b772f3214986b127fe89d2e7e721ca5e852a618cdbbf00cc955154cc90", size = 13795, upload-time = "2025-06-30T19:28:44.75Z" },
+]
+
+[[package]]
 name = "langchain-openai"
 version = "0.3.5"
 source = { registry = "https://pypi.org/simple" }
@@ -3103,6 +3117,7 @@ dependencies = [
     { name = "langchain-community" },
     { name = "langchain-core" },
     { name = "langchain-experimental" },
+    { name = "langchain-mcp-adapters" },
     { name = "langchain-openai" },
     { name = "langgraph" },
     { name = "mcp" },
@@ -3132,6 +3147,7 @@ requires-dist = [
     { name = "langchain-community", specifier = "==0.3.24" },
     { name = "langchain-core", specifier = "==0.3.59" },
     { name = "langchain-experimental", specifier = "==0.3.4" },
+    { name = "langchain-mcp-adapters", specifier = "==0.1.8" },
     { name = "langchain-openai", specifier = "==0.3.5" },
     { name = "langgraph", specifier = "==0.3.31" },
     { name = "mcp", specifier = "==1.10.1" },
