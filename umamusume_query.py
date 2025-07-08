@@ -1,13 +1,17 @@
-from langchain.prompts import PromptTemplate
-from langchain.prompts import ChatPromptTemplate
-from langchain_openai import OpenAI, ChatOpenAI
-from openai import OpenAI as OpenAIClient
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain.schema.runnable import RunnableSequence
-from typing import TypedDict, List
 import io
 import os
 import sys
+import uvicorn
+import json
+import argparse
+import uvicorn
+
+from langchain.prompts import PromptTemplate
+from langchain.prompts import ChatPromptTemplate
+from langchain_openai import OpenAI, ChatOpenAI
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain.schema.runnable import RunnableSequence
+from typing import TypedDict, List
 from langgraph.prebuilt import create_react_agent
 from langchain.schema import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
@@ -15,7 +19,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
-import uvicorn
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from langchain.chains import RetrievalQA
@@ -33,7 +37,6 @@ from langchain.schema import Document
 # from langchain.embeddings import HuggingFaceEmbeddings
 # from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
-import os
 from dotenv import load_dotenv
 from RAG import QwenEmbeddings
 
@@ -200,4 +203,8 @@ async def ask_question(request: QuestionRequest):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=1145)
+    arg=argparse.ArgumentParser()
+    
+    arg.add_argument("--port","-p", type=int, default=1145)
+    args=arg.parse_args()
+    uvicorn.run(app, host="0.0.0.0", port=args.port)
