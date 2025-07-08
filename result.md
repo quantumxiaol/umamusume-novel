@@ -81,3 +81,18 @@
     赛后发布会上，有人问她是什么支撑着她走到今天。她微笑着说："是训练员的坚持，是粉丝的期待，更是内心那份对完美的执着。"
 
     这就是我的东海帝王，一个永不言弃的传奇。她的故事告诉我们，真正的强者不是没有眼泪，而是含着眼泪依然向前奔跑。
+
+## 网络搜索
+
+bing 搜索
+
+    search in baidu for 爱慕织姬 site:wiki.biligame.com/umamusume/
+    {'results': [{'result_id': 1, 'snippet': '', 'title': '爱慕织姬 - 赛马娘WIKI_BWIKI_哔哩哔哩', 'link': 'https://wiki.biligame.com/umamusume/%E7%88%B1%E6%85%95%E7%BB%87%E5%A7%AC'}, {'result_id': 2, 'snippet': '', 'title': '爱慕织姬_百度百科', 'link': 'https://baike.baidu.com/item/%E7%88%B1%E6%85%95%E7%BB%87%E5%A7%AC/63373861'}, {'result_id': 3, 'snippet': '', 'title': '原型马 爱慕织姬 - 赛马娘WIKI_BWIKI_哔哩哔哩', 'link': 'https://wiki.biligame.com/umamusume/%E5%8E%9F%E5%9E%8B%E9%A9%AC_%E7%88%B1%E6%85%95%E7%BB%87%E5%A7%AC'}, {'result_id': 4, 'snippet': '', 'title': '马娘原型爱慕织姬：生涯耀眼却短暂，拿下首胜 - 百度贴吧', 'link': 'https://tieba.baidu.com/p/8498669563'}, {'result_id': 5, 'snippet': '', 'title': '爱慕织姬 | BoBoPic', 'link': 'https://bobopic.com/tag/%e7%88%b1%e6%85%95%e7%bb%87%e5%a7%ac'}]}
+
+bilibili wiki
+
+    咲咲木瞳  |   
+    简介   
+    背负着觉悟。贯彻孤高的一等星。   
+    属性面板
+    | ![速度属性图标2.png](https://patchwiki.biligame.com/images/umamusume/thumb/7/7f/knrajlzdx7g33ljkkggdh2bdxk29gfv.png/20px-%E9%80%9F%E5%BA%A6%E5%B1%9E%E6%80%A7%E5%9B%BE%E6%A0%872.png) 速度  | ![耐力属性图标2.png](https://patchwiki.biligame.com/images/umamusume/thumb/3/3a/k2cih7qi88b9qlok9qbnwhlgn6ux4es.png/20px-%E8%80%90%E5%8A%9B%E5%B1%9E%E6%80%A7%E5%9B%BE%E6%A0%872.png) 耐力  | ![力量属性图标2.png](https://patchwiki.biligame.com/images/umamusume/thumb/e/e9/8nwu21vq07ml9lklkxmzhab3yzz8zy7.png/20px-%E5%8A%9B%E9%87%8F%E5%B1%9E%E6%80%A7%E5%9B%BE%E6%A0%872.png) 力量  | ![毅力属性图标2.png](https://patchwiki.biligame.com/images/umamusume/thumb/f/f6/n806i4htrgmld0n0toqlbh83l18d7mh.png/20px-%E6%AF%85%E5%8A%9B%E5%B1%9E%E6%80%A7%E5%9B%BE%E6%A0%872.png) 毅力  | ![智力属性图标2.png](https://patchwiki.biligame.com/images/umamusume/thumb/3/3e/0hhxi9btqeucclwj0w7vzshlviuhgmi.png/20px-%E6%99%BA%E5%8A%9B%E5%B1%9E%E6%80%A7%E5%9B%BE%E6%A0%872.png) 智力   
