@@ -4,12 +4,16 @@ Search And Crawl MCP Server
 python webinfomcp.py -p 7777
 to activate the MCP server
 
+    playwright install
+
+
 """
-
-import asyncio
-from crawl4ai import AsyncWebCrawler
-
 import os
+import asyncio
+if os.name == 'nt':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+
 import sys
 import argparse
 import uvicorn
@@ -33,6 +37,7 @@ app = FastAPI(title="Search MCP",
           description="""
           get umamusume info from bilibili wiki
           Crawl a page from url and return the result as markdown
+          Parameters:{uma_name: str}
           """,
 )
 def bilibili_wiki(uma_name:str):
@@ -43,6 +48,7 @@ def bilibili_wiki(uma_name:str):
           description="""
           get umamusume info from bing
           Crawl a page from url and return the result as markdown
+          Parameters:{uma_name: str}
           """,
 )
 def bing(uma_name:str):

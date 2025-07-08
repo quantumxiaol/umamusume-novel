@@ -2,6 +2,7 @@ import asyncio
 import os
 
 from crawl4ai import AsyncWebCrawler
+from crawl4ai import WebCrawler
 from dotenv import load_dotenv
 from urllib.parse import urljoin, quote
 from crawl4ai.async_configs import ProxyConfig, CrawlerRunConfig

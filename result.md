@@ -96,3 +96,49 @@ bilibili wiki
     背负着觉悟。贯彻孤高的一等星。   
     属性面板
     | ![速度属性图标2.png](https://patchwiki.biligame.com/images/umamusume/thumb/7/7f/knrajlzdx7g33ljkkggdh2bdxk29gfv.png/20px-%E9%80%9F%E5%BA%A6%E5%B1%9E%E6%80%A7%E5%9B%BE%E6%A0%872.png) 速度  | ![耐力属性图标2.png](https://patchwiki.biligame.com/images/umamusume/thumb/3/3a/k2cih7qi88b9qlok9qbnwhlgn6ux4es.png/20px-%E8%80%90%E5%8A%9B%E5%B1%9E%E6%80%A7%E5%9B%BE%E6%A0%872.png) 耐力  | ![力量属性图标2.png](https://patchwiki.biligame.com/images/umamusume/thumb/e/e9/8nwu21vq07ml9lklkxmzhab3yzz8zy7.png/20px-%E5%8A%9B%E9%87%8F%E5%B1%9E%E6%80%A7%E5%9B%BE%E6%A0%872.png) 力量  | ![毅力属性图标2.png](https://patchwiki.biligame.com/images/umamusume/thumb/f/f6/n806i4htrgmld0n0toqlbh83l18d7mh.png/20px-%E6%AF%85%E5%8A%9B%E5%B1%9E%E6%80%A7%E5%9B%BE%E6%A0%872.png) 毅力  | ![智力属性图标2.png](https://patchwiki.biligame.com/images/umamusume/thumb/3/3e/0hhxi9btqeucclwj0w7vzshlviuhgmi.png/20px-%E6%99%BA%E5%8A%9B%E5%B1%9E%E6%80%A7%E5%9B%BE%E6%A0%872.png) 智力   
+
+## RAG MCP
+
+    可用工具: ['rag_raginfo_post']
+    Final answer: The background information of Umamusume 爱慕织姬 (Admire Vega, アドマイヤベガ) is as follows:
+
+    - **Birthday**: March 12th
+    - **Measurements**: B85·W57·H82
+    - **Height**: 157cm
+    - **Voice Actor**: Hitomi Sakisakaki
+    - **Special Title**: "Shining First-Class Star" or "煌めく一等星" (Twinkling First-Class Star)
+
+    To obtain this special title, it's required to win the following races under the condition of being the most popular character:        
+    - Satsuki Sho (皐月賞)
+    - Tokyo Yushun (日本ダービー)
+    - Takarazuka Kinen (宝塚記念)
+
+    Additionally, she must defeat these characters at least three times each:
+    - Good Opera (好歌剧)
+    - Narita Road (成田路)
+    - Great Wave (名将怒涛)
+    Final Answer:
+    The background information of Umamusume 爱慕织姬 (Admire Vega, アドマイヤベガ) is as follows:
+
+    - **Birthday**: March 12th
+    - **Measurements**: B85·W57·H82
+    - **Height**: 157cm
+    - **Voice Actor**: Hitomi Sakisakaki
+    - **Special Title**: "Shining First-Class Star" or "煌めく一等星" (Twinkling First-Class Star)
+
+    To obtain this special title, it's required to win the following races under the condition of being the most popular character:        
+    - Satsuki Sho (皐月賞)
+    - Tokyo Yushun (日本ダービー)
+    - Takarazuka Kinen (宝塚記念)
+
+    Additionally, she must defeat these characters at least three times each:
+    - Good Opera (好歌剧)
+    - Narita Road (成田路)
+    - Great Wave (名将怒涛)
+
+    Tool Calls: [{'name': 'rag_raginfo_post', 'arguments': {'question': 'What is the background of Umamusume 爱慕织姬?'}}]
+
+    Tool Results: [{'id': 'call_f17ec5fbf4894c2c9cee5e', 'name': 'rag_raginfo_post', 'content': '{\n  "answer": "爱慕织姬（Admire Vega、アドマイヤベガ）是一位赛马娘，她的生日是3月12日。她的三围是B85·W57·H82，身高为157cm。她的声优是咲咲木瞳。爱慕织姬的特殊称号（二つ名）是“ 闪耀的一等星”或“煌めく一等星”。要获得这个称号，需要在人气第一的状态下赢得皐月賞、東京優駿(日本ダービー)、宝塚記念，并且战胜好歌剧、成田路、名将怒涛各三次以上。"\n}', 'status': 'success'}]
+
+## WEB MCP
+
