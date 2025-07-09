@@ -33,30 +33,34 @@ QWEN的API在[官网](https://bailian.console.aliyun.com/?tab=model#/model-marke
 
 ## 运行
 
-赛马娘基础知识问答
+### 赛马娘基础知识问答
 
 在终端1中运行`python umamusume_query.py -p 1122`开启服务器
 在终端2中运行`python umamusume_client.py -u http://127.0.0.1:1122/ask`测试
 
-赛马娘怪文书写作
+### 赛马娘怪文书写作
 
-使用RAG MCP先查询本地向量数据库的赛马娘的角色信息
-使用WEB MCP在网络上查询赛马娘的角色信息
+使用RAG MCP先查询本地向量数据库的赛马娘的角色信息,
+使用WEB MCP在网络上查询赛马娘的角色信息,
+根据这些信息去创作小说。
 
-在终端1中运行`python raginfomcp.py -p 7778`开启Rag MCP服务器
-在终端2中运行`python webinfomcp.py -p 7777`开启Web MCP服务器
+运行`source .venv/bin/activate`开启环境
 
-在终端3运行
+在终端1中运行`bash run-server.sh`开启服务器
 
-    python umamusume_create_novel.py -p 1111 \
-        -w http://127.0.0.1:7777/mcp \
-        -r http://127.0.0.1:7778/mcp
+等待Web MCP 和 RAG MCP 启动成功，RAG使用本地的向量数据库，因此会比较慢。
 
-在终端4中运行`python umamusume_client.py -u http://127.0.0.1:1111/ask`测试
+在终端2中运行`bash run-client.sh`开启客户端
+
+通过修改`run-param.sh`中的端口来修改配置。
+
+在log文件中查看工具调用和服务器的输出。
 
 ## 结果
 
-[result](result.md)
+[result](./result.md)工具调用的结果等
+
+[Novel](./gen_novel.md)生成的一些同人小说
 
 ## 概念
 
