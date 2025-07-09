@@ -2,7 +2,8 @@ import asyncio
 import os
 
 from crawl4ai import AsyncWebCrawler
-
+from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
+from crawl4ai.content_filter_strategy import PruningContentFilter
 from dotenv import load_dotenv
 from urllib.parse import urljoin, quote
 from crawl4ai.async_configs import ProxyConfig, CrawlerRunConfig
@@ -24,29 +25,44 @@ class SingleProxyRotationStrategy:
 # 创建单一代理配置
 proxy_url = os.getenv("HTTP_PROXY") 
 single_proxy = ProxyConfig(server=proxy_url)
-
+md_generator = DefaultMarkdownGenerator(
+    options={
+        "ignore_links": True,
+        "ignore_images": True,
+        "escape_html": False,
+        "body_width": 80
+    }
+)
+prune_filter = PruningContentFilter(
+    threshold=0.5,
+    threshold_type="fixed",  # or "dynamic"
+    min_word_threshold=50
+)
 # 使用单一代理配置初始化代理轮换策略
 proxy_rotation_strategy = SingleProxyRotationStrategy(single_proxy)
+crawler_config = CrawlerRunConfig(
+    markdown_generator=md_generator,
+    excluded_selector=".ads, .comments, #sidebar",
+    )
 
+crawler_config_proxy = CrawlerRunConfig(
+    markdown_generator=md_generator,
+    proxy_rotation_strategy=proxy_rotation_strategy,
+    excluded_selector=".ads, .comments, #sidebar",
+    )
 async def _crawl_page(url):
     async with AsyncWebCrawler(verbose=True) as crawler:
-        result = await crawler.arun(url=url)
+        result = await crawler.arun(url=url,config=crawler_config)
         return result.markdown
 
 async def _crawl_page_proxy(url):
     print("Use Proxy URL",proxy_url)
     async with AsyncWebCrawler(verbose=True) as crawler:
         
-        single_proxy = ProxyConfig(server=proxy_url)
-        proxy_rotation_strategy = SingleProxyRotationStrategy(single_proxy)
-        crawler_config = CrawlerRunConfig(
-            proxy_rotation_strategy=proxy_rotation_strategy,
-
-            )
         if proxy_url is None:
-            result = await crawler.arun(url)
+            result = await crawler.arun(url=url,config=crawler_config)
         else:
-            result = await crawler.arun(url, crawler_config)
+            result = await crawler.arun(url=url, config=crawler_config_proxy)
         return result.markdown
     
 

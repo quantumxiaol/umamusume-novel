@@ -142,3 +142,44 @@ bilibili wiki
 
 ## WEB MCP
 
+    [INIT].... → Crawl4AI 0.6.3 
+    [FETCH]... ↓ https://wiki.biligame.com/umamusume/爱慕织姬                       
+    | ✓ | ⏱: 1.45s 
+    [SCRAPE].. ◆ https://wiki.biligame.com/umamusume/爱慕织姬                       
+    | ✓ | ⏱: 0.23s 
+    [COMPLETE] ● https://wiki.biligame.com/umamusume/爱慕织姬                       
+    | ✓ | ⏱: 1.69s 
+    [INIT].... → Crawl4AI 0.6.3 
+    [FETCH]... ↓ https://baike.baidu.com/item/爱慕织姬/63373861                     
+    | ✓ | ⏱: 0.76s 
+    [SCRAPE].. ◆ https://baike.baidu.com/item/爱慕织姬/63373861                     
+    | ✓ | ⏱: 0.03s 
+    [COMPLETE] ● https://baike.baidu.com/item/爱慕织姬/63373861                     
+    | ✓ | ⏱: 0.80s 
+    [INIT].... → Crawl4AI 0.6.3 
+    [FETCH]... ↓ https://wiki.biligame.com/umamusume/【Glacialis_Vega】爱慕织姬     
+    | ✓ | ⏱: 0.80s 
+    [SCRAPE].. ◆ https://wiki.biligame.com/umamusume/【Glacialis_Vega】爱慕织姬     
+    | ✓ | ⏱: 0.12s 
+    [COMPLETE] ● https://wiki.biligame.com/umamusume/【Glacialis_Vega】爱慕织姬     
+    | ✓ | ⏱: 0.92s 
+    [INIT].... → Crawl4AI 0.6.3 
+    [FETCH]... ↓ https://tieba.baidu.com/p/8498669563                               
+    | ✓ | ⏱: 0.44s 
+    [SCRAPE].. ◆ https://tieba.baidu.com/p/8498669563                               
+    | ✓ | ⏱: 0.00s 
+    [COMPLETE] ● https://tieba.baidu.com/p/8498669563                               
+    | ✓ | ⏱: 0.44s 
+    [INIT].... → Crawl4AI 0.6.3 
+    [FETCH]... ↓ https://bobopic.com/tag/爱慕织姬                                   
+    | ✓ | ⏱: 0.88s 
+    [SCRAPE].. ◆ https://bobopic.com/tag/爱慕织姬                                   
+    | ✓ | ⏱: 0.04s 
+    [COMPLETE] ● https://bobopic.com/tag/爱慕织姬                                   
+    | ✓ | ⏱: 0.92s 
+
+## 问题示例
+
+帮我创作一篇"爱慕织姬"的甜甜的同人文，你可以先去RAG上查找准确的信息，再通过web到wiki上搜索相关角色的信息，据此创作符合性格的同人小说
+
+帮我创作无声铃鹿的同人小说，讲述训练员和无声铃鹿甜蜜的约会过程，过程中还被特别周等人偷偷观察。
