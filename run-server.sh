@@ -24,14 +24,21 @@ echo ""
 > $LOG_WEB
 > $LOG_SERVER
 
+# 清空或创建pid文件
+> .rag.pid
+> .web.pid
+> .server.pid
+
 # 启动 raginfomcp.py
 nohup python raginfomcp.py -p $RAG_PORT > $LOG_RAG 2>&1 &
 RAG_PID=$!
+echo $RAG_PID > .rag.pid
 echo "🚀 Started raginfomcp.py (PID: $RAG_PID)"
 
 # 启动 webinfomcp.py
 nohup python webinfomcp.py -p $WEB_PORT > $LOG_WEB 2>&1 &
 WEB_PID=$!
+echo $WEB_PID > .web.pid
 echo "🚀 Started webinfomcp.py (PID: $WEB_PID)"
 
 # 等待两个服务启动完成
@@ -47,6 +54,7 @@ nohup python umamusume_create_novel.py -p $SERVER_PORT \
     -w http://127.0.0.1:$WEB_PORT/mcp \
     -r http://127.0.0.1:$RAG_PORT/mcp > $LOG_SERVER 2>&1 &
 SERVER_PID=$!
+echo $SERVER_PID > .server.pid
 echo "🚀 Started umamusume_create_novel.py (PID: $SERVER_PID)"
 
 # 等待 server 启动
