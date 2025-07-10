@@ -134,15 +134,9 @@ async def ask_question(request: QuestionRequest):
                 print("RAG可用MCP工具:", [tool.name for tool in rag_tools])
 
                 rag_agent = create_react_agent(model, rag_tools)
-
-                first_input = f"""
-                用户问题：{user_question}
-                
-                请先使用 RAG 工具查找与赛马娘角色相关的资料，尤其是关于她的名称、背景等信息。
-                RAG搜索时，传入的名称应该是中文名称。
-                返回角色的准确资料。
-                在此阶段***不需要创作小说***，返回资料即可。
-                """
+                with open("./prompt/searchinrag.md", "r", encoding="utf-8") as file:
+                    template = file.read()
+                first_input = template.format(user_question=user_question)
                 rag_result = await rag_agent.ainvoke({"messages": [HumanMessage(content=first_input)]})
                 base_info = rag_result["messages"][-1].content
                 print(f"[第一阶段结果] 基础信息: {base_info}")
@@ -155,15 +149,9 @@ async def ask_question(request: QuestionRequest):
                 print("Web可用MCP工具:", [tool.name for tool in web_tools])
 
                 web_agent = create_react_agent(model, web_tools)
-
-                final_input = f"""
-                用户问题: {user_question}
-
-                已知基础信息如下：
-                {base_info}
-
-                请结合上述信息和你的网络能力，写一篇甜甜的同人文。
-                """
+                with open("./prompt/searchinweb.md", "r", encoding="utf-8") as file:
+                    template = file.read()
+                final_input = template.format(user_question=user_question,base_info=base_info)
                 web_result = await web_agent.ainvoke({"messages": [HumanMessage(content=final_input)]})
                 final_answer = web_result["messages"][-1].content
 
