@@ -62,7 +62,7 @@ QWEN的API在[官网](https://bailian.console.aliyun.com/?tab=model#/model-marke
 
 [Novel](./gen_novel.md)生成的一些同人小说
 
-## 概念
+## 相关工具
 
 ### ‌RAG（Retrieval Augmented Generation）
 
@@ -72,3 +72,12 @@ RAG的基本流程包括三个主要步骤：索引、检索和生成。在索�
 ### Web Crawler
 
 [Clawl4ai](https://github.com/unclecode/crawl4ai)提供为 LLM、AI Agent和数据管道量身定制的快速、AI 就绪的 Web 爬虫。Crawl4AI 开源、灵活且专为实时性能而构建，为开发人员提供无与伦比的速度、精度和部署便利性。
+
+## NOTICE
+Disclaimer for Generated Content:
+
+The software may generate content, output, or data as a result of its operation. The copyright holder provides no warranty, express or implied, regarding the accuracy, reliability, or suitability of such generated content. The use of the software and any content it generates is entirely at your own risk. The copyright holder shall not be liable for any damages, losses, or consequences arising from the use or misuse of the generated content.
+
+关于生成内容的免责声明：
+
+本软件在运行过程中可能生成内容、输出或数据。版权持有者对这些生成内容的准确性、可靠性或适用性不提供任何形式的担保。使用本软件及其生成内容的风险完全由使用者自行承担。版权持有者不对因使用或误用生成内容而造成的任何损害、损失或后果承担责任。
