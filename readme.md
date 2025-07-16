@@ -23,11 +23,13 @@ uv
         or use          .venv/Scripts/activate
         uv sync
 
+安装crawl4ai所需的浏览器
+
         playwright install
 
-将.env.template复制为.env，修改其中的API_KEY。LLM，
+将.env.template复制为.env，修改其中的API_KEY。
 
-我测试时使用QWEN，和OPENAI的格式是兼容的。如果要使用OPENAI，直接修改QWEN_MODEL_NAME等即可，不用管前缀和下面的OPENAI_API_KEY。
+我测试时使用的LLM为QWEN，和OPENAI的格式是兼容的。如果要使用OPENAI，直接修改QWEN_MODEL_NAME等即可，不用管前缀和下面的OPENAI_API_KEY。
 
 QWEN的API在[官网](https://bailian.console.aliyun.com/?tab=model#/model-market)中获取，免费也是有不少额度的。
 
@@ -40,8 +42,11 @@ QWEN的API在[官网](https://bailian.console.aliyun.com/?tab=model#/model-marke
 
 ### 赛马娘怪文书写作
 
+阶段1:
 使用RAG MCP先查询本地向量数据库的赛马娘的角色信息,
+阶段2:
 使用WEB MCP在网络上查询赛马娘的角色信息,
+阶段3:
 根据这些信息去创作小说。
 
 运行`source .venv/bin/activate`开启环境
@@ -58,7 +63,7 @@ QWEN的API在[官网](https://bailian.console.aliyun.com/?tab=model#/model-marke
 
 ## 结果
 
-[result](./result.md)工具调用的结果等
+[Result](./result.md)工具调用的结果等
 
 [Novel](./gen_novel.md)生成的一些同人小说
 

@@ -156,8 +156,20 @@ async def ask_question(request: QuestionRequest):
                 final_answer = web_result["messages"][-1].content
 
                 print(f"[第二阶段结果] 最终回答: {final_answer}")
+                web_info=final_answer
 
-                return AnswerResponse(answer=final_answer)
+                # return AnswerResponse(answer=final_answer)
+            
+        # 第三阶段：使用结合基础信息创作小说
+        with open("./prompt/writenovel.md", "r", encoding="utf-8") as file:
+            template = file.read()
+        final_input = template.format(user_question=user_question,base_info=base_info,web_info=web_info)
+        novel_agent = create_react_agent(model,tools=[])
+        result = await novel_agent.ainvoke({"messages": [HumanMessage(content=final_input)]})
+        final_answer = result["messages"][-1].content
+        print(" Final Answer:\n", final_answer)
+        return AnswerResponse(answer=final_answer)
+
 
     except Exception as e:
         print(f"Error during processing: {e}")
