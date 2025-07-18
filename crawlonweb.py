@@ -67,7 +67,7 @@ async def _crawl_page_proxy(url):
     
 
 
-def get_uma_info_on_bilibili_wiki(uma_name:str):
+async def get_uma_info_on_bilibili_wiki(uma_name:str):
     """
     uma_name 爱慕织姬
     bilibi_wiki_url : https://wiki.biligame.com/umamusume/
@@ -80,14 +80,17 @@ def get_uma_info_on_bilibili_wiki(uma_name:str):
     encoded_name = quote(uma_name)
     base_bilibi_wiki_url = "https://wiki.biligame.com/umamusume/"
     final_url = urljoin(base_bilibi_wiki_url, encoded_name)
-    markdown = asyncio.run(_crawl_page_proxy(final_url))
+    # markdown = asyncio.run(_crawl_page_proxy(final_url))
+    markdown = await _crawl_page(final_url)
     return markdown
 
-def get_uma_info_bing(uma_name:str,max_num_results:int=5):
+async def get_uma_info_bing(uma_name:str,max_num_results:int=5):
     site=" site:wiki.biligame.com/umamusume/"
     result_dict=search_bing(uma_name+site,max_num_results)
     urls=[result['link'] for result in result_dict['results']]
-    markdowns=[asyncio.run(_crawl_page(url)) for url in urls]
+    # markdowns=[asyncio.run(_crawl_page(url)) for url in urls]
+    tasks = [_crawl_page(url) for url in urls]
+    markdowns = await asyncio.gather(*tasks)
     return markdowns
 
 """

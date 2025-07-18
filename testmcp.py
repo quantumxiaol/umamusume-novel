@@ -1,9 +1,9 @@
 """
 check mcp server and list tools
 
-python testmcp.py -u "http://127.0.0.1:7778/mcp" -q "can you tell me about umamusume 爱慕织姬?from local RAG"
+python testmcp.py -u "http://127.0.0.1:7778/sse" -q "can you tell me about umamusume 爱慕织姬?from local RAG"
 
-python testmcp.py -u "http://127.0.0.1:7777/mcp" -q "can you tell me about umamusume 爱慕织姬?from bilibili wiki"
+python testmcp.py -u "http://127.0.0.1:7777/sse" -q "can you tell me about umamusume 爱慕织姬?from bilibili wiki"
 
 """
 
