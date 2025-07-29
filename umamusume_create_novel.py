@@ -74,6 +74,7 @@ from langchain.prompts import MessagesPlaceholder
 from mcp.client.sse import sse_client
 from mcp import ClientSession
 from langchain_mcp_adapters.tools import load_mcp_tools
+from langchain_core.messages import AIMessage,ToolMessage
 from dotenv import load_dotenv
 
 from WEB import get_urls,proxies
@@ -116,6 +117,39 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
+def extract_tool_info(agent_response):
+    tool_calls = []
+    tool_results = [] 
+
+    for msg in agent_response["messages"]:
+        # 判断消息类型
+        if isinstance(msg, AIMessage) and hasattr(msg, "tool_calls"):
+            for tool_call in msg.tool_calls:
+                tool_calls.append({
+                "name": tool_call["name"],
+                "arguments": tool_call["args"]
+                })
+
+        elif isinstance(msg, ToolMessage):
+            tool_results.append({
+            "id": msg.tool_call_id,
+            "name": msg.name,
+            "content": msg.content,
+            "status": msg.status
+            })
+
+    # 提取最终回答
+    final_answer = None
+    for msg in reversed(agent_response["messages"]):
+        if isinstance(msg, AIMessage):
+            final_answer = msg.content  
+        break
+
+    return {
+    "tool_calls": tool_calls,
+    "tool_results": tool_results,
+    "final_answer": final_answer
+    }
 
 # 定义请求模型
 class QuestionRequest(BaseModel):
@@ -148,7 +182,9 @@ async def ask_question(request: QuestionRequest):
                 first_input = template.format(user_question=user_question)
                 rag_result = await rag_agent.ainvoke({"messages": [HumanMessage(content=first_input)]})
                 base_info = rag_result["messages"][-1].content
+                result1 = extract_tool_info(rag_result)
                 print(f"[第一阶段结果] 基础信息: {base_info}")
+                print("\n[第一阶段Tool Call] : ", result1["tool_calls"])
 
         # 第二阶段：使用 Web Agent 结合基础信息回答问题
         async with sse_client(web_url) as (read, write):
@@ -163,8 +199,9 @@ async def ask_question(request: QuestionRequest):
                 final_input = template.format(user_question=user_question,base_info=base_info)
                 web_result = await web_agent.ainvoke({"messages": [HumanMessage(content=final_input)]})
                 final_answer = web_result["messages"][-1].content
-
+                result2 = extract_tool_info(web_result)
                 print(f"[第二阶段结果] 最终回答: {final_answer}")
+                print("\n[第二阶段Tool Call]: ", result2["tool_calls"])
                 web_info=final_answer
 
                 # return AnswerResponse(answer=final_answer)
