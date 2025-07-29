@@ -83,17 +83,26 @@ web_url = None
 
 load_dotenv(".env")
 
-model=os.getenv("QWEN_MODEL_NAME")
-api_key=os.getenv("QWEN_MODEL_API_KEY")
-api_base=os.getenv("QWEN_MODEL_BASE_URL")
+model_name=os.getenv("INFO_LLM_MODEL_NAME")
+api_key=os.getenv("INFO_LLM_MODEL_API_KEY")
+api_base=os.getenv("INFO_LLM_MODEL_BASE_URL")
+
+model_name_writer=os.getenv("WRITER_LLM_MODEL_NAME")
+api_key_writer=os.getenv("WRITER_LLM_MODEL_API_KEY")
+api_base_writer=os.getenv("WRITER_LLM_MODEL_BASE_URL")
 
 ua=os.getenv("USER_AGENT")
 
 # 初始化 LLM 模型
 model = ChatOpenAI(
-    model_name= model,
+    model_name= model_name,
     api_key= api_key,
     base_url=api_base,
+)
+model_writer=ChatOpenAI(
+    model_name= model_name_writer,
+    api_key= api_key_writer,
+    base_url=api_base_writer,
 )
 
 app = FastAPI(title="LangChain-Umamusume-Server")
@@ -164,7 +173,7 @@ async def ask_question(request: QuestionRequest):
         with open("./prompt/writenovel.md", "r", encoding="utf-8") as file:
             template = file.read()
         final_input = template.format(user_question=user_question,base_info=base_info,web_info=web_info)
-        novel_agent = create_react_agent(model,tools=[])
+        novel_agent = create_react_agent(model_writer,tools=[])
         result = await novel_agent.ainvoke({"messages": [HumanMessage(content=final_input)]})
         final_answer = result["messages"][-1].content
         print(" Final Answer:\n", final_answer)

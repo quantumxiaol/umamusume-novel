@@ -1,5 +1,7 @@
 # Errors
 
+## RAG 数据库异常
+
     You: 列举出你知道的所有的马娘的信息
     Bot: 我目前知道12位赛马娘的详细信息:
 
@@ -79,3 +81,60 @@
     3. **支持者的鼓励**：描绘其他赛马娘或训练员如何帮助她走出低谷，让她明白即使无法重返赛场，她依然是大家心中的传奇。
 
     总之，无声铃鹿的骨折事件是她人生中的转折点，也是塑造她独特角色弧光的重要元素。这种缺憾美让她的形象更加深刻且富有感染力。
+
+## LLM Token错误
+
+    You：我想写训练员和强击以及真机伶的故事，就讲述强击和真机伶都想当训练员的妹妹，因此在明面上和暗地里都在较劲，想让训练员只看着她，在圣诞节准备惊喜，在情人节准备礼物送巧克力，在夏季合宿时身着泳装大胆出击，最后和训练员确定了关系，三人和睦相处。
+    最后的小说字数在8000字左右，情节自然连贯流畅，吸引人阅读。
+
+    RAG MCP INFO
+
+    真机伍的背景信息
+    根据已知信息，没有关于“真机伍”的相关背景信息。可能您指的是“真机伶”（カレンチャン），她的相关信息如下：
+
+    - 赛马娘中文名: 真机伶
+    - 赛马娘英语名: Curren Chan
+    - 赛马娘日语名: カレンチャン
+    - 赛马娘生日: 3月31日
+    - 三围: B83·W55·H79
+    - 身高(cm): 155
+    - 声优(cv): 篠原侑
+    - 赛马娘特殊称号(二つ名)(中文名): 闪光女孩
+    - 赛马娘特殊称号(二つ名)(日语名): 閃光乙女
+    - 赛马娘特殊称号获取条件: 在包含スプリンターズステークス和高松宮記念在内的1200m短跑比赛中取得九次胜利,且粉丝数达到24w人
+
+    如果您需要其他信息，请随时告知。
+                            
+    强击的背景信息
+    强击（Vivlos，ヴィブロス）是一位赛马娘，她的生日是4月9日。她的三围是B81·W51·H86，身高156cm，声优是伊藤彩沙。强击的特殊称号（二つ名）是“小恶魔系赛马娘”（小悪魔系ウマ娘），要获得这个称号需要以人气第1获得重赏6胜以上，并且赢得秋華賞、伊麗莎白女王盃（第三年）、維多利亚一哩賽，粉丝数达到320000人以上。
+
+    强击的场地适应性包括草场和泥地；距离适应性包括短距离、英里、中距离和长距离；跑法适应性包括逃、先行、差和追。这些适应性会影响她的力量、速度和智力属性。在比赛中，强击依靠她的属性和技能来取得优势，技能会在比赛中的某个时刻开启，影响她的状态。
+
+    WEB MCP INFO
+
+    [INIT].... → Crawl4AI 0.6.3 
+    [FETCH]... ↓ https://wiki.biligame.com/umamusume/强击                           
+    | ✓ | ⏱: 1.32s 
+    [SCRAPE].. ◆ https://wiki.biligame.com/umamusume/强击                           
+    | ✓ | ⏱: 0.10s 
+    [COMPLETE] ● https://wiki.biligame.com/umamusume/强击                           
+    | ✓ | ⏱: 1.42s 
+    INFO:     127.0.0.1:63142 - "POST /messages/?session_id=ed006b44921447e1a7f2261e84f6d86d HTTP/1.1" 202 Accepted
+    [07/29/25 22:08:43] INFO     Processing request of type            server.py:619
+                                CallToolRequest                                    
+    [INIT].... → Crawl4AI 0.6.3 
+    [FETCH]... ↓ https://wiki.biligame.com/umamusume/真机传                         
+    | ✓ | ⏱: 1.08s 
+    [SCRAPE].. ◆ https://wiki.biligame.com/umamusume/真机传                         
+    | ✓ | ⏱: 0.04s 
+    [COMPLETE] ● https://wiki.biligame.com/umamusume/真机传                         
+    | ✓ | ⏱: 1.13s 
+
+    RAG检索还是有点效果的，这个qwen-long认不得真机伶，toolcall传了一个错误的字段，拿这个真机X去搜索，RAG返回了正确的信息。
+    Web search能上知乎搜良子我是真绷不住了，和个弱智一样，早知道用google api了。但是问题似乎还是在于tool call的参数有问题。
+
+## 输出敏感
+
+    Response: {"detail":"Error code: 400 - {'error': {'code': 'data_inspection_failed', 'param': None, 'message': 'Output data may contain inappropriate content.', 'type': 'data_inspection_failed'}
+
+这下我绷不住了，这么健全的内容竟然敏感是吧。

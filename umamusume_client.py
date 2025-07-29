@@ -20,9 +20,9 @@ import os,sys,argparse
 from dotenv import load_dotenv
 load_dotenv()
 
-model=os.getenv("QWEN_MODEL_NAME")
-api_key=os.getenv("QWEN_MODEL_API_KEY")
-api_base=os.getenv("QWEN_MODEL_BASE_URL")
+model=os.getenv("INFO_LLM_MODEL_NAME")
+api_key=os.getenv("INFO_LLM_MODEL_API_KEY")
+api_base=os.getenv("INFO_LLM_MODEL_BASE_URL")
 # 初始化记忆对象
 memory = ConversationBufferMemory()
 llm = ChatOpenAI(

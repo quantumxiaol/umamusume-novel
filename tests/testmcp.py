@@ -22,9 +22,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-model = ChatOpenAI(model_name=os.getenv("QWEN_MODEL_NAME"),
-    api_key=os.getenv("QWEN_MODEL_API_KEY"),
-    base_url=os.getenv("QWEN_MODEL_BASE_URL"),
+model = ChatOpenAI(model_name=os.getenv("INFO_LLM_MODEL_NAME"),
+    api_key=os.getenv("INFO_LLM_MODEL_API_KEY"),
+    base_url=os.getenv("INFO_LLM_MODEL_BASE_URL"),
     temperature=0.7,
     )
 

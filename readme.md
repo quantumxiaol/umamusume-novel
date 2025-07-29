@@ -38,11 +38,18 @@ uv
 
         playwright install
 
+## .env
+
 将.env.template复制为.env，修改其中的API_KEY。
 
-我测试时使用的LLM为QWEN，和OPENAI的格式是兼容的。如果要使用OPENAI，直接修改QWEN_MODEL_NAME等即可，不用管前缀和下面的OPENAI_API_KEY。
+我测试时使用的LLM为QWEN，和OPENAI的格式是兼容的。如果要使用OPENAI，直接修改INFO_LLM_MODEL_NAME等即可，不用管前缀和下面的OPENAI_API_KEY。
 
 QWEN的API在[官网](https://bailian.console.aliyun.com/?tab=model#/model-market)中获取，免费也是有不少额度的。
+
+INFO_LLM_MODEL_NAME 可以使用一些Tool Call能力强的模型；
+
+WRITER_LLM_MODEL_NAME 可以使用一些更擅长创作的模型。
+
 
 ## 运行
 
@@ -59,6 +66,8 @@ QWEN的API在[官网](https://bailian.console.aliyun.com/?tab=model#/model-marke
 使用WEB MCP在网络上查询赛马娘的角色信息,
 阶段3:
 根据这些信息去创作小说。
+
+其中阶段1和阶段2使用INFO_LLM_MODEL_NAME来调用工具获取信息，而阶段3创作小说不需要调用工具，使用WRITER_LLM_MODEL_NAME这种更擅长生成的模型。
 
 运行`source .venv/bin/activate`开启环境
 

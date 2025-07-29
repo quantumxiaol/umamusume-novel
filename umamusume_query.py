@@ -53,9 +53,9 @@ from RAG import QwenEmbeddings
 
 load_dotenv(".env")
 
-model=os.getenv("QWEN_MODEL_NAME")
-api_key=os.getenv("QWEN_MODEL_API_KEY")
-api_base=os.getenv("QWEN_MODEL_BASE_URL")
+model=os.getenv("INFO_LLM_MODEL_NAME")
+api_key=os.getenv("INFO_LLM_MODEL_API_KEY")
+api_base=os.getenv("INFO_LLM_MODEL_BASE_URL")
 
 ua=os.getenv("USER_AGENT")
 
