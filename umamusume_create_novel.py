@@ -202,6 +202,7 @@ async def ask_question(request: QuestionRequest):
                 result2 = extract_tool_info(web_result)
                 print(f"[第二阶段结果] 最终回答: {final_answer}")
                 print("\n[第二阶段Tool Call]: ", result2["tool_calls"])
+                print("\n[第二阶段Tool Results]: ", result2["tool_results"])
                 web_info=final_answer
 
                 # return AnswerResponse(answer=final_answer)
