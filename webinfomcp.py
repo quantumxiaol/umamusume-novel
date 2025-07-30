@@ -29,99 +29,154 @@ from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
-
+from typing import List,Dict
 from crawlonweb import get_uma_info_bing,get_uma_info_on_bilibili_wiki
 from crawlonweb import get_uma_info_bing_biliwiki,get_uma_info_bing_moegirl
+
+from crawlonweb import _crawl_page,_crawl_page_proxy
+from search.bingsearch import search_bing
+from search.googlesearch import google_search_urls
+
 load_dotenv(".env")
 
 
 mcp = FastMCP("Web Search MCP")
 
 
-@mcp.tool(description="""
-    get umamusume info from bilibili wiki
-    Crawl a page from url and return the result as markdown
-    Parameters:{uma_name: str}
-
-""")
-async def bilibili_wiki(uma_name:str):
-    """"""
-    try:
-        markdown = await get_uma_info_on_bilibili_wiki(uma_name)
-        return {
-            "status":"success",
-            "result":str(markdown)
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "message": str(e)
-        }
-
-
 
 @mcp.tool(description="""
-    get umamusume info from web using bing,
-    Crawl the result page from url and return the result as markdown
-    Parameters:{uma_name: str}
+Performs a web search with google for the given query and returns a list of relevant URLs with ranking.
+Use this tool first to find potential pages about a character, event, or topic.
+The model can then choose which URLs to crawl using the crawl_web_page tool.
+Returns up to 5 results ranked by relevance.
 
+You can use site:wiki.biligame.com/umamusume to search for pages within the Bilibili wiki.
+You can use site:site:mzh.moegirl.org.cn to search for pages within the moegirl wiki.
+          
+Parameters:
+- query: The full search query, including keywords and site restrictions if needed.
+       Example: "爱慕织姬 site:wiki.biligame.com/umamusume"
 """)
-async def searchinbing(uma_name:str):
-    """"""
-    try:
-        markdown = await get_uma_info_bing(uma_name)
-        return {
-            "status":"success",
-            "result":str(markdown)
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "message": str(e)
-        }
-
-@mcp.tool(description="""
-    Get information about a Umamusume character from multiple websites using Bing search.
-    This tool searches for information on both Bilibili Wiki and Moegirl Wiki, crawls the result pages, and returns the results as markdown.
-    Parameters:
-    - uma_name: The name of the Umamusume character to search for.
-""")
-async def searchinbing_multi_sites(uma_name: str):
+async def web_search_google(query: str) -> Dict[str, List[Dict[str, str]]]:
     """
-    Search for information about a Umamusume character on Bilibili Wiki and Moegirl Wiki.
+    Search the web using Google Custom Search API and return ranked URLs.
+    Does NOT crawl the pages.
     """
     try:
-        # 并发执行两个搜索任务
-        biliwiki_task = get_uma_info_bing_biliwiki(uma_name)
-        moegirl_task = get_uma_info_bing_moegirl(uma_name)  
+        # 使用 Google 搜索（更稳定）
+        results = google_search_urls(search_term=query, num=5)
+        # 如果使用 Bing，也可以替换为 search_bing 并提取 links
+        # results = [{'url': r['link'], 'priority': i+1} for i, r in enumerate(search_bing(query)['results'])]
 
-        # 等待两个任务完成
-        biliwiki_markdowns, moegirl_markdowns = await asyncio.gather(biliwiki_task, moegirl_task, return_exceptions=True)
+        return {
+            "results": [
+                {"url": item["url"], "rank": str(item["priority"])}
+                for item in results
+            ]
+        }
 
-        # 处理可能的异常
-        if isinstance(biliwiki_markdowns, Exception):
-            biliwiki_result = f"Error fetching from Bilibili Wiki: {str(biliwiki_markdowns)}"
-        else:
-            biliwiki_result = "\n\n---\n\n".join(biliwiki_markdowns) if biliwiki_markdowns else "No results found on Bilibili Wiki."
+    except Exception as e:
+        return {
+            "results": [],
+            "error": str(e)
+        }
 
-        if isinstance(moegirl_markdowns, Exception):
-            moegirl_result = f"Error fetching from Moegirl Wiki: {str(moegirl_markdowns)}"
-        else:
-            moegirl_result = "\n\n---\n\n".join(moegirl_markdowns) if moegirl_markdowns else "No results found on Moegirl Wiki."
+@mcp.tool(description="""
+Performs a web search with bing engine for the given query and returns a list of relevant URLs with ranking.
+Use this tool first to find potential pages about a character, event, or topic.
+The model can then choose which URLs to crawl using the crawl_web_page tool.
+Returns up to 5 results ranked by relevance.
 
-        # 整合结果
-        combined_result = f"## Results from Bilibili Wiki\n\n{biliwiki_result}\n\n## Results from Moegirl Wiki\n\n{moegirl_result}"
+You can use site:wiki.biligame.com/umamusume to search for pages within the Bilibili wiki.
+You can use site:site:mzh.moegirl.org.cn to search for pages within the moegirl wiki.
+          
+Parameters:
+- query: The full search query, including keywords and site restrictions if needed.
+       Example: "爱慕织姬 site:wiki.biligame.com/umamusume"
+""")
+async def web_search_bing(query: str) -> Dict[str, List[Dict[str, str]]]:
+    """
+    Search the web using Bing Search API and return ranked URLs.
+    Does NOT crawl the pages.
+    Returns results in the format: {"results": [{"url": "...", "rank": "1"}, ...]}
+    """
+    try:
+        bing_response = search_bing(query)
+        
+        # 检查是否有错误
+        if "error" in bing_response:
+            return {
+                "results": [],
+                "error": bing_response["error"]
+            }
+        
+        # 提取 results 列表
+        bing_results = bing_response.get("results", [])
+        
+        # 转换格式：从 Bing 的 result_id/title/snippet/link 转为 url/rank
+        formatted_results = []
+        for item in bing_results:
+            formatted_results.append({
+                "url": item["link"],       # 使用 link 作为 url
+                "rank": str(item["result_id"] + 1)  # 通常 rank 从 1 开始，result_id 可能从 0 开始
+            })
+        
+        return {
+            "results": formatted_results
+        }
 
+    except Exception as e:
+        return {
+            "results": [],
+            "error": str(e)
+        }
+
+@mcp.tool(description="""
+          Crawl a page from url and return the result as markdown.
+          For website in mainland china, please use this tool.
+          """,
+)
+async def crawl_page(url: str):
+    try:
+        result=await _crawl_page(url)
+        # print("Raw result type:", type(result))         # 查看类型
+        # print("Raw result (first 500 chars):", str(result)[:500])  # 打印部分原始内容
+        # print(result)
         return {
             "status": "success",
-            "result": combined_result
+            "result": str(result)
         }
-
     except Exception as e:
         return {
             "status": "error",
             "message": str(e)
+       }
+
+
+@mcp.tool(description="""
+          Crawl a page from url via local proxy,
+          able to access wikipedia ,github .etc,
+          and return the result as markdown
+          """,
+)
+async def crawl_page_via_proxy(url: str):
+    try:
+        print("start crawl_page_via_proxy")
+        result=await _crawl_page_proxy(url)
+        # print("Raw result type:", type(result))         # 查看类型
+        # print("Raw result (first 500 chars):", str(result)[:500])  # 打印部分原始内容
+        # print(result)
+        return {
+            "status": "success",
+            "result": str(result)
         }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+       }
+
+
 
 def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlette:
     sse = SseServerTransport("/messages/")
