@@ -31,6 +31,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 
 from crawlonweb import get_uma_info_bing,get_uma_info_on_bilibili_wiki
+from crawlonweb import get_uma_info_bing_biliwiki,get_uma_info_bing_moegirl
 load_dotenv(".env")
 
 
@@ -79,7 +80,48 @@ async def searchinbing(uma_name:str):
             "message": str(e)
         }
 
+@mcp.tool(description="""
+    Get information about a Umamusume character from multiple websites using Bing search.
+    This tool searches for information on both Bilibili Wiki and Moegirl Wiki, crawls the result pages, and returns the results as markdown.
+    Parameters:
+    - uma_name: The name of the Umamusume character to search for.
+""")
+async def searchinbing_multi_sites(uma_name: str):
+    """
+    Search for information about a Umamusume character on Bilibili Wiki and Moegirl Wiki.
+    """
+    try:
+        # 并发执行两个搜索任务
+        biliwiki_task = get_uma_info_bing_biliwiki(uma_name)
+        moegirl_task = get_uma_info_bing_moegirl(uma_name)  
 
+        # 等待两个任务完成
+        biliwiki_markdowns, moegirl_markdowns = await asyncio.gather(biliwiki_task, moegirl_task, return_exceptions=True)
+
+        # 处理可能的异常
+        if isinstance(biliwiki_markdowns, Exception):
+            biliwiki_result = f"Error fetching from Bilibili Wiki: {str(biliwiki_markdowns)}"
+        else:
+            biliwiki_result = "\n\n---\n\n".join(biliwiki_markdowns) if biliwiki_markdowns else "No results found on Bilibili Wiki."
+
+        if isinstance(moegirl_markdowns, Exception):
+            moegirl_result = f"Error fetching from Moegirl Wiki: {str(moegirl_markdowns)}"
+        else:
+            moegirl_result = "\n\n---\n\n".join(moegirl_markdowns) if moegirl_markdowns else "No results found on Moegirl Wiki."
+
+        # 整合结果
+        combined_result = f"## Results from Bilibili Wiki\n\n{biliwiki_result}\n\n## Results from Moegirl Wiki\n\n{moegirl_result}"
+
+        return {
+            "status": "success",
+            "result": combined_result
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlette:
     sse = SseServerTransport("/messages/")
