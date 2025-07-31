@@ -68,7 +68,7 @@ async def web_search_google(query: str) -> Dict[str, List[Dict[str, str]]]:
         # 如果使用 Bing，也可以替换为 search_bing 并提取 links
         # results = [{'url': r['link'], 'priority': i+1} for i, r in enumerate(search_bing(query)['results'])]
         results = [
-            {"url": item["url"], "priority": item["priority"]}
+            {"url": item["url"], "priority": str(item["priority"])}
             for item in results
         ]
         print("\nGoogle:\n")
