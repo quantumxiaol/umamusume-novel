@@ -1,9 +1,9 @@
 import os,sys
 import asyncio
-import requests
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from search.bingsearch import search_bing
+# from search.bingsearch import search_bing
+from search.googlesearch import google_search_urls
 from crawlonweb import get_uma_info_bing,get_uma_info_on_bilibili_wiki
 
 query_name="爱慕织姬"
@@ -19,13 +19,12 @@ async def main():
 
     query_miss_str=f"{query_wrong_name} site:wiki.biligame.com/umamusume"
 
-    print(f"search in bing for {query_str}\n",search_bing(query=query_str))
+    print(f"search in Google for {query_str}\n",google_search_urls(search_term=query_str))
 
-    print(f"search in bing for {query_miss_str}\n",search_bing(query=query_miss_str))
+    print(f"search in Google for {query_miss_str}\n",google_search_urls(search_term=query_miss_str))
 
 
-
-    print("Bing")
+    # print("Google")
 
     # result1 = await get_uma_info_bing(query_name)
     # print(result1)

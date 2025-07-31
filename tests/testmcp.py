@@ -31,10 +31,10 @@ model = ChatOpenAI(model_name=os.getenv("INFO_LLM_MODEL_NAME"),
 server_url="http://127.0.0.1:1234/mcp"
 async def async_main(server_url:str="",question:str=""):
     async with sse_client(server_url) as (read, write):
-        print('MCP server连接成功')
+        # print('MCP server连接成功')
         async with ClientSession(read, write) as session:
             # 初始化连接
-            print('MCP server session已建立')
+            # print('MCP server session已建立')
             await session.initialize()
             print('MCP server session已初始化')
 
@@ -43,13 +43,17 @@ async def async_main(server_url:str="",question:str=""):
 
             if question != "":
                 agent = create_react_agent(model, tools)
-                agent_response = await agent.ainvoke({"messages": [question]})
-                print("Final answer:", agent_response["messages"][-1].content)
+                agent_response = await agent.ainvoke(
+                    {"messages": [question]},
+                    config={"recursion_limit": 75}
+                    
+                    )
+                # print("Final answer:", agent_response["messages"][-1].content)
                 result = extract_tool_info(agent_response)
 
-                print(" Final Answer:\n", result["final_answer"])
-                print("\n Tool Calls:", result["tool_calls"])
-                print("\n Tool Results:", result["tool_results"])
+                print("Final Answer:\n", result["final_answer"])
+                print("\nTool Calls:", result["tool_calls"])
+                print("\nTool Results:", result["tool_results"])
 
 
 

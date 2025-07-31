@@ -98,6 +98,13 @@ RAG的基本流程包括三个主要步骤：索引、检索和生成。在索�
 
 [Clawl4ai](https://github.com/unclecode/crawl4ai)提供为 LLM、AI Agent和数据管道量身定制的快速、AI 就绪的 Web 爬虫。Crawl4AI 开源、灵活且专为实时性能而构建，为开发人员提供无与伦比的速度、精度和部署便利性。
 
+### Web Search
+
+Google:需要设置适当的 API 密钥和环境变量。要进行设置，请在 Google Cloud 凭证控制台 （https://console.cloud.google.com/apis/credentials） 中创建GOOGLE_API_KEY，并使用可编程搜索引擎 （https://programmablesearchengine.google.com/controlpanel/create） 创建GOOGLE_CSE_ID。
+Custom Search JSON API 每天免费提供 100 次搜索查询。额外请求的费用为每 1000 次查询 $5，每天最多 1 万次查询。
+
+[监控](https://console.cloud.google.com/apis/dashboard?hl=zh-cn)
+
 ## 项目结构
 
     umamusume-novel

@@ -6,8 +6,11 @@ from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import PruningContentFilter
 from dotenv import load_dotenv
 from urllib.parse import urljoin, quote
+from typing import List
 from crawl4ai.async_configs import ProxyConfig, CrawlerRunConfig
-from bingsearch import search_bing
+from search.bingsearch import search_bing
+from search.googlesearch import google_search_urls
+
 
 if load_dotenv(".env")  :
     print("✅ 成功加载 .env 文件")
@@ -85,7 +88,7 @@ async def get_uma_info_on_bilibili_wiki(uma_name:str):
     return markdown
 
 async def get_uma_info_bing(uma_name:str,max_num_results:int=5):
-    site=" site:wiki.biligame.com/umamusume/"
+    site=" site:wiki.biligame.com/umamusume"
     result_dict=search_bing(uma_name+site,max_num_results)
     urls=[result['link'] for result in result_dict['results']]
     # markdowns=[asyncio.run(_crawl_page(url)) for url in urls]
@@ -93,7 +96,71 @@ async def get_uma_info_bing(uma_name:str,max_num_results:int=5):
     markdowns = await asyncio.gather(*tasks)
     return markdowns
 
+async def get_uma_info_bing_biliwiki(uma_name: str, max_num_results: int = 5):
+    """
+    在bilibili wiki上搜索角色信息
+    """
+    site = "site:wiki.biligame.com/umamusume"
+    query = f"{quote(uma_name)} {site}"
+    result_dict = search_bing(query, max_num_results)
+    
+    if 'error' in result_dict:
+        print(f"Error encountered during Bing search for {query}: {result_dict['error']}")
+        return []
+    
+    urls = [result['link'] for result in result_dict.get('results', [])]
+    tasks = [_crawl_page(url) for url in urls]
+    markdowns = await asyncio.gather(*tasks)
+    return markdowns
+
+async def get_uma_info_bing_moegirl(uma_name: str, max_num_results: int = 5, proxy_url: str = None):
+    """
+    在萌娘百科上搜索角色信息
+    如果需要，可以使用代理
+    """
+    site = "site:mzh.moegirl.org.cn"
+    query = f"{quote(uma_name)} {site}"
+    result_dict = search_bing(query, max_num_results)
+    
+    if 'error' in result_dict:
+        print(f"Error encountered during Bing search for {query}: {result_dict['error']}")
+        return []
+    
+    urls = [result['link'] for result in result_dict.get('results', [])]
+    # 使用代理爬取页面内容
+    tasks = [_crawl_page_proxy(url, proxy_url) for url in urls]
+    markdowns = await asyncio.gather(*tasks)
+    return markdowns
+
 """
 .moegirl.org.cn
 moegirl.uk
 """
+
+async def get_uma_info_google_biliwiki(uma_name: str, max_results: int = 5):
+    """
+    使用 Google 搜索 Bilibili 赛马娘 Wiki 页面
+    """
+    search_term = f"{uma_name} site:wiki.biligame.com/umamusume"
+    try:
+        url_dicts = google_search_urls(search_term, num=max_results)
+        urls = [item['url'] for item in url_dicts]
+        tasks = [_crawl_page(url) for url in urls]
+        markdowns = await asyncio.gather(*tasks)
+        return markdowns
+    except Exception as e:
+        return [f"❌ Bilibili Wiki Search Error: {str(e)}"]
+    
+async def get_uma_info_google_moegirl(uma_name: str, max_results: int = 5, proxy_url: str = None):
+    """
+    使用 Google 搜索萌娘百科页面（可选代理）
+    """
+    search_term = f"{uma_name} site:mzh.moegirl.org.cn"
+    try:
+        url_dicts = google_search_urls(search_term, num=max_results)
+        urls = [item['url'] for item in url_dicts]
+        tasks = [_crawl_page_proxy(url, proxy_url) for url in urls]
+        markdowns = await asyncio.gather(*tasks)
+        return markdowns
+    except Exception as e:
+        return [f"❌ Moegirl Wiki Search Error: {str(e)}"]

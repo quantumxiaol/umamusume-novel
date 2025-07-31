@@ -197,11 +197,15 @@ async def ask_question(request: QuestionRequest):
                 with open("./prompt/searchinweb.md", "r", encoding="utf-8") as file:
                     template = file.read()
                 final_input = template.format(user_question=user_question,base_info=base_info)
-                web_result = await web_agent.ainvoke({"messages": [HumanMessage(content=final_input)]})
+                web_result = await web_agent.ainvoke(
+                    {"messages": [HumanMessage(content=final_input)]},
+                    config={"recursion_limit": 75}
+                    )
                 final_answer = web_result["messages"][-1].content
                 result2 = extract_tool_info(web_result)
                 print(f"[第二阶段结果] 最终回答: {final_answer}")
                 print("\n[第二阶段Tool Call]: ", result2["tool_calls"])
+                print("\n[第二阶段Tool Results]: ", result2["tool_results"])
                 web_info=final_answer
 
                 # return AnswerResponse(answer=final_answer)
