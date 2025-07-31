@@ -122,7 +122,7 @@ async def web_search_bing(query: str) -> Dict[str, List[Dict[str, str]]]:
         for item in bing_results:
             formatted_results.append({
                 "url": item["link"],       # 使用 link 作为 url
-                "rank": str(item["result_id"] + 1)  # 通常 rank 从 1 开始，result_id 可能从 0 开始
+                "rank": str(item["result_id"])
             })
         print("\nBing:\n")
         print(query)
