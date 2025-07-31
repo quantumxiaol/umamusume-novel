@@ -67,12 +67,16 @@ async def web_search_google(query: str) -> Dict[str, List[Dict[str, str]]]:
         results = google_search_urls(search_term=query, num=5)
         # 如果使用 Bing，也可以替换为 search_bing 并提取 links
         # results = [{'url': r['link'], 'priority': i+1} for i, r in enumerate(search_bing(query)['results'])]
-
+        results = [
+            {"url": item["url"], "priority": item["priority"]}
+            for item in results
+        ]
+        print("\nGoogle:\n")
+        print(query)
+        print(results)
         return {
-            "results": [
-                {"url": item["url"], "rank": str(item["priority"])}
-                for item in results
-            ]
+            "results": results,
+            "error": None
         }
 
     except Exception as e:
@@ -120,6 +124,9 @@ async def web_search_bing(query: str) -> Dict[str, List[Dict[str, str]]]:
                 "url": item["link"],       # 使用 link 作为 url
                 "rank": str(item["result_id"] + 1)  # 通常 rank 从 1 开始，result_id 可能从 0 开始
             })
+        print("\nBing:\n")
+        print(query)
+        print(formatted_results)
         
         return {
             "results": formatted_results

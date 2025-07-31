@@ -31,9 +31,8 @@
     query:"马娘角色2中文名称site:wiki.biligame.com/umamusume"
     query:"马娘角色2中文名称site:site:mzh.moegirl.org.cn"
 
-    query:"马娘角色1日文名称site:wiki.biligame.com/umamusume"
-    query:"马娘角色1日文名称site:site:mzh.moegirl.org.cn"
-    query:"马娘角色2日文名称site:wiki.biligame.com/umamusume"
-    query:"马娘角色2日文名称site:site:mzh.moegirl.org.cn"
+这将查询到相关角色的wiki的链接，注意分辨链接是否合理。
 
-这将查询到相关角色的wiki，接着使用crawler去爬取这个结果链接，接着汇总分析资料。
+接着使用crawler去爬取这个结果链接，再汇总分析资料。
+
+最后输出角色的资料，供下一阶段使用。
