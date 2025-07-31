@@ -43,7 +43,11 @@ async def async_main(server_url:str="",question:str=""):
 
             if question != "":
                 agent = create_react_agent(model, tools)
-                agent_response = await agent.ainvoke({"messages": [question]})
+                agent_response = await agent.ainvoke(
+                    {"messages": [question]},
+                    config={"recursion_limit": 75}
+                    
+                    )
                 # print("Final answer:", agent_response["messages"][-1].content)
                 result = extract_tool_info(agent_response)
 
