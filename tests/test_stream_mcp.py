@@ -1,9 +1,9 @@
 """
-check mcp server and list tools
+check streamable http mcp server and list tools
 
-python ./tests/testmcp.py -u "http://127.0.0.1:7778/sse" -q "can you tell me about umamusume 爱慕织姬?from local RAG"
+python ./tests/test_stream_mcp.py -u "http://127.0.0.1:7778/mcp" -q "can you tell me about umamusume 爱慕织姬?from local RAG"
 
-python ./tests/testmcp.py -u "http://127.0.0.1:7777/sse" -q "can you tell me about umamusume 爱慕织姬?from bilibili wiki"
+python ./tests/test_stream_mcp.py -u "http://127.0.0.1:7777/mcp" -q "can you tell me about umamusume 爱慕织姬?from bilibili wiki"
 
 """
 
@@ -13,6 +13,7 @@ import asyncio
 from langchain_mcp_adapters.tools import load_mcp_tools
 from langgraph.prebuilt import create_react_agent
 from mcp.client.sse import sse_client
+from mcp.client.streamable_http import streamablehttp_client
 from langchain_openai import ChatOpenAI
 from mcp import ClientSession
 import argparse
@@ -30,9 +31,9 @@ model = ChatOpenAI(model_name=os.getenv("INFO_LLM_MODEL_NAME"),
 
 server_url="http://127.0.0.1:1234/mcp"
 async def async_main(server_url:str="",question:str=""):
-    async with sse_client(server_url) as (read, write):
+    async with streamablehttp_client(server_url) as (read_stream, write_stream, get_session_id):
         # print('MCP server连接成功')
-        async with ClientSession(read, write) as session:
+        async with ClientSession(read_stream, write_stream) as session:
             # 初始化连接
             # print('MCP server session已建立')
             await session.initialize()

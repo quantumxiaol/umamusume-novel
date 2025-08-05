@@ -39,45 +39,22 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_openai import OpenAI, ChatOpenAI
 from openai import OpenAI as OpenAIClient
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain.schema.runnable import RunnableSequence
 from typing import TypedDict, List
-from langgraph.prebuilt import create_react_agent
-from langchain.schema import StrOutputParser
-from langchain.schema.runnable import RunnablePassthrough
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import WebBaseLoader
-from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from langchain.chains import RetrievalQA
 from langchain_openai import ChatOpenAI
-from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings
-from dashscope import embeddings
-from langchain_community.document_loaders import TextLoader,CSVLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.prompts import ChatPromptTemplate
 from starlette.middleware.cors import CORSMiddleware
-from langchain_community.document_loaders import PyMuPDFLoader
-from langchain import hub
-from langchain.schema import Document
-from langchain_core.runnables import RunnableMap, RunnableLambda
-# from langchain.embeddings import HuggingFaceEmbeddings
-# from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.embeddings import HuggingFaceEmbeddings
+
 from langchain.agents import  AgentExecutor
 from langgraph.prebuilt import create_react_agent
-from langchain_core.tools import BaseTool
-from typing import Optional
+
 from langchain.prompts import MessagesPlaceholder
 from mcp.client.sse import sse_client
+from mcp.client.streamable_http import streamablehttp_client
 from mcp import ClientSession
 from langchain_mcp_adapters.tools import load_mcp_tools
 from langchain_core.messages import AIMessage,ToolMessage
 from dotenv import load_dotenv
-
-from WEB import get_urls,proxies
 
 rag_url = None
 web_url = None
@@ -170,8 +147,10 @@ async def ask_question(request: QuestionRequest):
 
     try:
         # 第一阶段：使用 RAG Agent 获取基础信息
-        async with sse_client(rag_url) as (read, write):
-            async with ClientSession(read, write) as session:
+        async with streamablehttp_client(rag_url) as (read_stream, write_stream, get_session_id):
+        # print('MCP server连接成功')
+            async with ClientSession(read_stream, write_stream) as session:
+
                 await session.initialize()
                 rag_tools = await load_mcp_tools(session)
                 print("RAG可用MCP工具:", [tool.name for tool in rag_tools])
@@ -187,8 +166,9 @@ async def ask_question(request: QuestionRequest):
                 print("\n[第一阶段Tool Call] : ", result1["tool_calls"])
 
         # 第二阶段：使用 Web Agent 结合基础信息回答问题
-        async with sse_client(web_url) as (read, write):
-            async with ClientSession(read, write) as session:
+        async with streamablehttp_client(web_url) as (read_stream, write_stream, get_session_id):
+        # print('MCP server连接成功')
+            async with ClientSession(read_stream, write_stream) as session:
                 await session.initialize()
                 web_tools = await load_mcp_tools(session)
                 print("Web可用MCP工具:", [tool.name for tool in web_tools])

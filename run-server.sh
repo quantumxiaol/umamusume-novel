@@ -51,8 +51,8 @@ echo "✅ Rag MCP and Web MCP are ready."
 
 # 启动 umamusume_create_novel.py（Server）
 nohup python umamusume_create_novel.py -p $SERVER_PORT \
-    -w http://127.0.0.1:$WEB_PORT/sse \
-    -r http://127.0.0.1:$RAG_PORT/sse > $LOG_SERVER 2>&1 &
+    -w http://127.0.0.1:$WEB_PORT/mcp \
+    -r http://127.0.0.1:$RAG_PORT/mcp > $LOG_SERVER 2>&1 &
 SERVER_PID=$!
 echo $SERVER_PID > .server.pid
 echo "🚀 Started umamusume_create_novel.py (PID: $SERVER_PID)"
