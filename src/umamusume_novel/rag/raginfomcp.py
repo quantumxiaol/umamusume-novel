@@ -46,17 +46,15 @@ from starlette.types import Receive, Scope, Send
 from mcp.server import Server
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 
-from dotenv import load_dotenv
+from .rag import initialize_rag, rag_manager
+from ..config import config
+config.validate()
 
-from RAG import initialize_rag, rag_manager
+model_name=config.INFO_LLM_MODEL_NAME
+api_key=config.INFO_LLM_MODEL_API_KEY
+api_base=config.INFO_LLM_MODEL_BASE_URL
+ua=config.USER_AGENT
 
-load_dotenv(".env")
-
-model_name=os.getenv("INFO_LLM_MODEL_NAME")
-api_key=os.getenv("INFO_LLM_MODEL_API_KEY")
-api_base=os.getenv("INFO_LLM_MODEL_BASE_URL")
-
-ua=os.getenv("USER_AGENT")
 
 
 # 初始化 LLM 模型
@@ -254,7 +252,7 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
         lifespan=lifespan,
     )
 
-
+rag_mcp_app = create_starlette_app(mcp._mcp_server, debug=True)
 # Main entry point
 def main():
     mcp_server = mcp._mcp_server

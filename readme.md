@@ -53,11 +53,6 @@ WRITER_LLM_MODEL_NAME 可以使用一些更擅长创作的模型。
 
 ## 运行
 
-### 赛马娘基础知识问答
-
-在终端1中运行`python umamusume_query.py -p 1122`开启服务器
-在终端2中运行`python umamusume_client.py -u http://127.0.0.1:1122/ask`测试
-
 ### 赛马娘怪文书写作
 
 阶段1:
@@ -71,21 +66,21 @@ WRITER_LLM_MODEL_NAME 可以使用一些更擅长创作的模型。
 
 运行`source .venv/bin/activate`开启环境
 
-在终端1中运行`bash run-server.sh`开启服务器
+在终端1中运行`bash ./scripts/run-server.sh`开启服务器
 
 等待Web MCP 和 RAG MCP 启动成功，RAG使用本地的向量数据库，因此会比较慢。
 
-在终端2中运行`bash run-client.sh`开启客户端
+在终端2中运行`bash ./scripts/run-client.sh`开启客户端
 
-通过修改`run-param.sh`中的端口来修改配置。
+通过修改`./scripts/run-param.sh`中的端口来修改配置。
 
 在log文件中查看工具调用和服务器的输出。
 
 ## 结果
 
-[Result](./results/result.md)工具调用的结果等
+[Result](./resources/results/result.md)工具调用的结果等
 
-[Novel](./results/gen_novel.md)生成的一些同人小说
+[Novel](./resources/results/gen_novel.md)生成的一些同人小说
 
 ## 相关工具
 
@@ -107,31 +102,70 @@ Custom Search JSON API 每天免费提供 100 次搜索查询。额外请求的�
 
 ## 项目结构
 
-    umamusume-novel
-        | |-.docs/                      # RAG所需的文档
-        | |-.prompt/                    # Agent的prompt
-        | |-.results/                   # 工具运行的一些结果，生成的一些怪文书的样例
-        | |-.tests/                     # 一些测试用的python文件      
-        | |-.env                        # 配置文件，需要自己配置key      
-        | |-bingsearch.py               # Bing搜索
-        | |-crawlonweb.py               # 爬虫
-        | |-RAG.py                      # RAG
-        | |-raginfomcp.py               # RAG MCP Server
-        | |-readme.md
-        | |-requirements_lock.txt       # 锁定的依赖项，包含了每个包准确的版本
-        | |-requirements.txt
-        | |-run-client.sh               # 运行客户端
-        | |-run-param.sh                # 运行参数，可以修改MCP server的端口
-        | |-run-server.sh               # 运行服务端，会先启动两个MCP server，再启动umamusume_create_novel.py
-        | |-run.sh                      # 直接运行服务端+客户端
-        | |-stop-server.sh              # 停止服务端
-        | |-umamusume_client.py         # 客户端py
-        | |-umamusume_create_novel.py   # 生成小说的服务端py
-        | |-umamusume_query.py          # 赛马娘基础信息问答的py，开发过程中用于测试RAG是否正常
-        | |-uv.lock                     # uv环境
-        | |-WEB.py                      # Web 配置
-        | |-webinfomcp.py               # Web MCP Server
-
+        umamusume-novel/
+        |-.env                        # 配置文件，需要自己配置key（如API密钥等）
+        |-.env.template               # 环境变量模板，供参考和新环境设置
+        |-LICENSE                     # 项目许可证文件
+        |-
+        |-logs/                       # 日志文件存放目录
+        |   |-rag.log                 # RAG MCP服务日志
+        |   |-web.log                 # Web MCP服务日志
+        |   |-novel_generator.log     # Server服务日志
+        |-
+        |-resources/                  # 资源文件存放目录
+        |   |-docs/                   # RAG所需文档
+        |   |-prompt/                 # Agent的提示词库
+        |   |-results/                # 工具运行结果，生成的一些小说样本
+        |-
+        |-scripts/                    # 包含所有Shell脚本的目录
+        |   |-run-client.sh           # 运行客户端脚本，用于启动客户端
+        |   |-run-param.sh            # 参数配置文件，定义了服务器端口等参数
+        |   |-run-server.sh           # 启动服务器脚本，负责启动MCP Server及小说生成服务
+        |   |-stop-server.sh          # 停止服务器脚本，用于终止运行中的服务
+        |-
+        |-src/                        # 源代码根目录
+        |   |-umamusume_novel/        # 主项目包
+        |       |-client/             # 客户端模块
+        |       |   |-__init__.py     
+        |       |   |-umamusume_client.py  # 客户端实现文件(未实现)
+        |       |
+        |       |-crawler/            # 爬虫模块
+        |       |   |-__init__.py     
+        |       |   |-crawlonweb.py   # 爬虫
+        |       |
+        |       |-rag/                # RAG相关模块
+        |       |   |-__init__.py     
+        |       |   |-rag.py          # RAG核心逻辑实现
+        |       |   |-raginfomcp.py   # RAG MCP服务实现
+        |       |
+        |       |-search/             # 搜索引擎模块
+        |       |   |-__init__.py     
+        |       |   |-bingsearch.py   # Bing搜索引擎接口
+        |       |   |-baidusearch.py  # Baidu搜索引擎接口
+        |       |   |-googlesearch.py # Google搜索引擎接口
+        |       |
+        |       |-server/             # 服务端模块
+        |       |   |-__init__.py     # 初始化文件
+        |       |   |-novel_generator.py  # 小说生成逻辑实现
+        |       |   |-rag_query.py    # RAG查询逻辑实现
+        |       |   |-umamusume_create_novel.py  # 服务端主程序入口
+        |       |
+        |       |-web/                # Web相关模块
+        |           |-__init__.py     # 初始化文件
+        |           |-config.py       # Web配置文件
+        |           |-main.py         # Web应用主入口
+        |           |-webinfomcp.py   # Web MCP服务实现
+        |-
+        |-tests/                      # 测试脚本
+        |   |-testonbing.py           # 测试bing搜索
+        |   |-testongoogle.py         # 测试谷歌搜索
+        |   |-test_stream_mcp.py      # 测试MCP服务
+        |-
+        |-pyproject.toml              # 项目配置文件  
+        |-uv.lock
+        |-requirements_lock.txt       # 确切的包版本信息
+        |-requirements.txt            # 项目依赖项文件，列出所有必需的Python包
+        |-README.md                   # 项目说明文档，包括安装、运行指南等
 
 
 ## NOTICE

@@ -33,14 +33,14 @@ import uvicorn
 import json
 import argparse
 import asyncio
-
+import traceback
 from langchain.prompts import PromptTemplate
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import OpenAI, ChatOpenAI
 from openai import OpenAI as OpenAIClient
 from langchain_core.messages import HumanMessage, SystemMessage
 from typing import TypedDict, List
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
 from starlette.middleware.cors import CORSMiddleware
@@ -54,22 +54,25 @@ from mcp.client.streamable_http import streamablehttp_client
 from mcp import ClientSession
 from langchain_mcp_adapters.tools import load_mcp_tools
 from langchain_core.messages import AIMessage,ToolMessage
-from dotenv import load_dotenv
+from ..config import config
+config.validate()
 
-rag_url = None
-web_url = None
 
-load_dotenv(".env")
+model_name=config.INFO_LLM_MODEL_NAME
+api_key=config.INFO_LLM_MODEL_API_KEY
+api_base=config.INFO_LLM_MODEL_BASE_URL
+ua=config.USER_AGENT
 
-model_name=os.getenv("INFO_LLM_MODEL_NAME")
-api_key=os.getenv("INFO_LLM_MODEL_API_KEY")
-api_base=os.getenv("INFO_LLM_MODEL_BASE_URL")
+model_name_writer=config.WRITER_LLM_MODEL_NAME
+api_key_writer=config.WRITER_LLM_MODEL_API_KEY
+api_base_writer=config.WRITER_LLM_MODEL_BASE_URL
 
-model_name_writer=os.getenv("WRITER_LLM_MODEL_NAME")
-api_key_writer=os.getenv("WRITER_LLM_MODEL_API_KEY")
-api_base_writer=os.getenv("WRITER_LLM_MODEL_BASE_URL")
+prompt_dir=config.PROMPT_DIRECTORY
 
-ua=os.getenv("USER_AGENT")
+searchinrag_prompt_path = os.path.join(config.PROMPT_DIRECTORY, "searchinrag.md")
+searchinweb_prompt_path = os.path.join(config.PROMPT_DIRECTORY, "searchinweb.md")
+writenovel_prompt_path = os.path.join(config.PROMPT_DIRECTORY, "writenovel.md")
+
 
 # 初始化 LLM 模型
 model = ChatOpenAI(
@@ -85,7 +88,9 @@ model_writer=ChatOpenAI(
 
 app = FastAPI(title="LangChain-Umamusume-Server")
 
-# 可选，前端报CORS时
+
+
+# 前端报CORS时
 app.add_middleware(
     CORSMiddleware,
     allow_origins=['*'],
@@ -137,14 +142,19 @@ class AnswerResponse(BaseModel):
     answer: str
 
 
-# 提供查询接口 http://127.0.0.1:1145/ask
+# 提供创作接口 http://127.0.0.1:1145/ask
 @app.post("/ask", response_model=AnswerResponse)
-async def ask_question(request: QuestionRequest):
-    user_question = str(request.question) if request.question else ""
+async def ask_question(request: Request, user_request: QuestionRequest):
+    user_question = str(user_request.question) if user_request.question else ""
     print(f"用户问题：{user_question}")
 
-
-
+    rag_url = request.app.state.rag_mcp_url
+    web_url = request.app.state.web_mcp_url
+    # --- 可选：添加防御性检查 ---
+    if not rag_url or not web_url:
+        error_msg = "MCP server URLs are not configured. Please start the server with -r and -w arguments."
+        print(f"[ERROR] {error_msg}")
+        raise HTTPException(status_code=500, detail=error_msg)
     try:
         # 第一阶段：使用 RAG Agent 获取基础信息
         async with streamablehttp_client(rag_url) as (read_stream, write_stream, get_session_id):
@@ -156,7 +166,7 @@ async def ask_question(request: QuestionRequest):
                 print("RAG可用MCP工具:", [tool.name for tool in rag_tools])
 
                 rag_agent = create_react_agent(model, rag_tools)
-                with open("./prompt/searchinrag.md", "r", encoding="utf-8") as file:
+                with open(searchinrag_prompt_path, "r", encoding="utf-8") as file:
                     template = file.read()
                 first_input = template.format(user_question=user_question)
                 rag_result = await rag_agent.ainvoke({"messages": [HumanMessage(content=first_input)]})
@@ -174,7 +184,7 @@ async def ask_question(request: QuestionRequest):
                 print("Web可用MCP工具:", [tool.name for tool in web_tools])
 
                 web_agent = create_react_agent(model, web_tools)
-                with open("./prompt/searchinweb.md", "r", encoding="utf-8") as file:
+                with open(searchinweb_prompt_path, "r", encoding="utf-8") as file:
                     template = file.read()
                 final_input = template.format(user_question=user_question,base_info=base_info)
                 web_result = await web_agent.ainvoke(
@@ -191,7 +201,7 @@ async def ask_question(request: QuestionRequest):
                 # return AnswerResponse(answer=final_answer)
             
         # 第三阶段：使用结合基础信息创作小说
-        with open("./prompt/writenovel.md", "r", encoding="utf-8") as file:
+        with open(writenovel_prompt_path, "r", encoding="utf-8") as file:
             template = file.read()
         final_input = template.format(user_question=user_question,base_info=base_info,web_info=web_info)
         novel_agent = create_react_agent(model_writer,tools=[])
@@ -201,24 +211,19 @@ async def ask_question(request: QuestionRequest):
         return AnswerResponse(answer=final_answer)
 
 
-    except Exception as e:
-        print(f"Error during processing: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except BaseException as e: 
+        # --- 打印详细的错误信息 ---
+        error_msg = f"[ERROR] Unhandled error during processing in /ask route: {type(e).__name__}: {e}"
+        print(error_msg)
+        
+        # --- 打印完整的堆栈跟踪 ---
+        traceback_str = traceback.format_exc()
+        print(f"[ERROR] Full Traceback:\n{traceback_str}")
+        # --- 打印结束 ---
+        
+        # --- 返回给客户端更具体的错误信息---
+        # 将 traceback_str 也包含在 detail 中可以帮助开发者快速定位问题
+        # 不要将敏感信息通过 detail 暴露给最终用户
+        detailed_error = f"{str(e)}\n(See server logs for full traceback)" 
+        raise HTTPException(status_code=500, detail=detailed_error)
     
-if __name__ == "__main__":
-    arg=argparse.ArgumentParser()
-    arg.add_argument("-w","--web_mcp_server_url", 
-                     type=str, 
-                     default="http://127.0.0.1:7777/mcp",
-                     help="Web MCP 服务器地址")
-    arg.add_argument("-r","--rag_mcp_server_url", 
-                     type=str, 
-                     default="http://127.0.0.1:7778/mcp",
-                     help="RAG MCP 服务器地址")
-    arg.add_argument("-p","--port", type=int, default=1111)
-    args=arg.parse_args()
-    rag_url=args.rag_mcp_server_url
-    web_url=args.web_mcp_server_url
-    uvicorn.run(app, host="0.0.0.0", port=args.port,
-                # reload=True
-                )

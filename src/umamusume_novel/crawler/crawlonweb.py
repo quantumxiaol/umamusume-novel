@@ -4,18 +4,15 @@ import os
 from crawl4ai import AsyncWebCrawler
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import PruningContentFilter
-from dotenv import load_dotenv
 from urllib.parse import urljoin, quote
 from typing import List
 from crawl4ai.async_configs import ProxyConfig, CrawlerRunConfig
-from search.bingsearch import search_bing
-from search.googlesearch import google_search_urls
+from ..search.bingsearch import search_bing
+from ..search.googlesearch import google_search_urls
+from ..config import config
+config.validate()
 
 
-if load_dotenv(".env")  :
-    print("✅ 成功加载 .env 文件")
-else:
-    print("❌ 未能加载 .env 文件")
 
 class SingleProxyRotationStrategy:
     def __init__(self, proxy_config):
@@ -26,7 +23,7 @@ class SingleProxyRotationStrategy:
         return self.proxy_config
     
 # 创建单一代理配置
-proxy_url = os.getenv("HTTP_PROXY") 
+proxy_url = config.HTTP_PROXY
 single_proxy = ProxyConfig(server=proxy_url)
 md_generator = DefaultMarkdownGenerator(
     options={

@@ -1,16 +1,22 @@
 import os
 import pickle
 from typing import List, Optional, Dict, Any
-from langchain.vectorstores import FAISS
-from langchain.embeddings import HuggingFaceEmbeddings
+# from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
+# from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.document_loaders import CSVLoader, TextLoader, PyMuPDFLoader, DirectoryLoader
+# from langchain.document_loaders import CSVLoader, TextLoader, PyMuPDFLoader, DirectoryLoader
+from langchain_community.document_loaders import CSVLoader, TextLoader, PyMuPDFLoader, DirectoryLoader
 from langchain.docstore.document import Document
-
+from ..config import config
 class RAGManager:
     def __init__(self):
         # 从环境变量读取配置
-        self.rag_directory = os.getenv('RAG_DIRECTORY', './docs')
+        rag_dir = config.RAG_DIRECTORY
+        if not os.path.exists(rag_dir):
+            raise FileNotFoundError(f"RAG directory not found: {rag_dir}")
+        self.rag_directory = rag_dir
         self.cache_file = os.path.join(self.rag_directory, 'vectorstore_cache.pkl')
         self.vectorstore = None
         self.config = self._load_config()

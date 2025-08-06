@@ -47,16 +47,14 @@ from langchain.schema import Document
 # from langchain.embeddings import HuggingFaceEmbeddings
 # from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from dotenv import load_dotenv
-from RAG import initialize_rag, rag_manager
-# 加载环境变量
-from dotenv import load_dotenv
-load_dotenv(".env")
+from ..rag.rag import initialize_rag, rag_manager
+from ..config import config
+config.validate()
 
 # 获取配置
-model_name = os.getenv("INFO_LLM_MODEL_NAME")
-api_key = os.getenv("INFO_LLM_MODEL_API_KEY")
-api_base = os.getenv("INFO_LLM_MODEL_BASE_URL")
+model_name=config.INFO_LLM_MODEL_NAME
+api_key=config.INFO_LLM_MODEL_API_KEY
+api_base=config.INFO_LLM_MODEL_BASE_URL
 
 # 初始化 LLM 模型
 llm = ChatOpenAI(

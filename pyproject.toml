@@ -1,9 +1,10 @@
 [project]
-name = "umamusume-novel"
+name = "umamusume_novel"
 version = "0.1.0"
-description = "Add your description here"
+description = "An AI agent to write Umamusume novels."
 readme = "README.md"
 requires-python = ">=3.12"
+
 dependencies = [
 "bs4==0.0.2",
 "chromadb==1.0.15",
@@ -33,3 +34,13 @@ dependencies = [
 "torch==2.7.1",
 "uvicorn==0.34.2",
 ]
+
+[tool.setuptools.packages.find]
+where = ["src"] 
+
+[tool.setuptools.package-dir]
+"" = "src" 
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"

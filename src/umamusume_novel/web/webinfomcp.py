@@ -27,22 +27,16 @@ from starlette.types import Receive, Scope, Send
 from mcp.server import Server
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 
-from dotenv import load_dotenv
-from fastapi import FastAPI
 from typing import List,Dict
-from crawlonweb import get_uma_info_bing,get_uma_info_on_bilibili_wiki
-from crawlonweb import get_uma_info_bing_biliwiki,get_uma_info_bing_moegirl
+from ..crawler.crawlonweb import get_uma_info_bing,get_uma_info_on_bilibili_wiki
+from ..crawler.crawlonweb import get_uma_info_bing_biliwiki,get_uma_info_bing_moegirl
 
-from crawlonweb import _crawl_page,_crawl_page_proxy
-from search.bingsearch import search_bing
-from search.googlesearch import google_search_urls
-
-load_dotenv(".env")
+from ..crawler.crawlonweb import _crawl_page,_crawl_page_proxy
+from ..search.bingsearch import search_bing
+from ..search.googlesearch import google_search_urls
 
 
 mcp = FastMCP("Web Search MCP")
-
-
 
 @mcp.tool(description="""
 Performs a web search with google for the given query and returns a list of relevant URLs with ranking.
@@ -231,7 +225,7 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
         lifespan=lifespan,
     )
 
-
+web_mcp_app = create_starlette_app(mcp._mcp_server, debug=True)
 # Main entry point
 def main():
     mcp_server = mcp._mcp_server
