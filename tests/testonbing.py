@@ -3,8 +3,8 @@ import asyncio
 import requests
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from search.bingsearch import search_bing
-from crawlonweb import get_uma_info_bing,get_uma_info_on_bilibili_wiki
+from umamusume_novel.search.bingsearch import search_bing
+from umamusume_novel.crawler.crawlonweb import get_uma_info_bing,get_uma_info_on_bilibili_wiki
 
 query_name="爱慕织姬"
 
