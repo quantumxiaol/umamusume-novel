@@ -73,7 +73,7 @@ echo "🚀 Started webinfomcp.py with uvicorn (PID: $WEB_PID)"
 # 等待 uvicorn 启动成功的日志出现
 echo "⏳ Waiting for Rag MCP (port $RAG_PORT) and Web MCP (port $WEB_PORT) servers to start..."
 # 使用 timeout 避免无限等待
-WAIT_TIMEOUT=60 # 秒
+WAIT_TIMEOUT=600 # 秒
 WAIT_COUNT=0
 SLEEP_INTERVAL=2
 until (grep -q "Uvicorn running on.*127.0.0.1:$RAG_PORT" "$LOG_RAG" && \

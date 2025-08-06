@@ -176,8 +176,8 @@ async def run_full_stack(rag_port: int, web_port: int, server_port: int, start_c
         rag_indicator = [f"Uvicorn running on http://{DEFAULT_HOST}:{rag_port}"]
         web_indicator = [f"Uvicorn running on http://{DEFAULT_HOST}:{web_port}"]
         
-        wait_rag_task = wait_for_logs(rag_log, rag_indicator, timeout=60)
-        wait_web_task = wait_for_logs(web_log, web_indicator, timeout=60)
+        wait_rag_task = wait_for_logs(rag_log, rag_indicator, timeout=600)
+        wait_web_task = wait_for_logs(web_log, web_indicator, timeout=600)
 
         rag_ready, web_ready = await asyncio.gather(wait_rag_task, wait_web_task)
 
