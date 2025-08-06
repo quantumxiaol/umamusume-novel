@@ -2,7 +2,7 @@
 # conda create -n umamusume-novel python=3.12
 # uv venv --python 3.12.0
 # pip install -r requirements.txt
-
+-e .
 # agent
 langchain==0.3.25
 langchain-core==0.3.59
