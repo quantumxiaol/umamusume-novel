@@ -66,6 +66,8 @@ WRITER_LLM_MODEL_NAME 可以使用一些更擅长创作的模型。
 
 运行`source .venv/bin/activate`开启环境
 
+方法一：
+
 在终端1中运行`bash ./scripts/run-server.sh`开启服务器
 
 等待Web MCP 和 RAG MCP 启动成功，RAG使用本地的向量数据库，因此会比较慢。
@@ -73,6 +75,11 @@ WRITER_LLM_MODEL_NAME 可以使用一些更擅长创作的模型。
 在终端2中运行`bash ./scripts/run-client.sh`开启客户端
 
 通过修改`./scripts/run-param.sh`中的端口来修改配置。
+
+方法二：
+
+运行`python main.py with-client`，开启后输入创作内容。
+
 
 在log文件中查看工具调用和服务器的输出。
 
