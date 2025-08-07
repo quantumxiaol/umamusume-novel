@@ -23,6 +23,12 @@ curl -X POST http://127.0.0.1:1111/ask -H "Content-Type: application/json" \
 -d '{"question":"帮我创作一篇爱慕织姬的甜甜的同人文，你可以先去wiki上搜索相关角色的信息，据此创作符合性格的同人小说"}'
 
 curl -X POST http://localhost:1122/ask -json {"question": "请告诉我关于特别周的一些信息"}
+
+
+curl -X POST "http://127.0.0.1:1111/askstream" \
+     -H "Content-Type: application/json" \
+     -d '{"question": "请创作赛马娘米浴和训练员的感人故事"}'
+
 """
 
 
@@ -41,6 +47,7 @@ from openai import OpenAI as OpenAIClient
 from langchain_core.messages import HumanMessage, SystemMessage
 from typing import TypedDict, List
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
 from starlette.middleware.cors import CORSMiddleware
@@ -226,4 +233,77 @@ async def ask_question(request: Request, user_request: QuestionRequest):
         # 不要将敏感信息通过 detail 暴露给最终用户
         detailed_error = f"{str(e)}\n(See server logs for full traceback)" 
         raise HTTPException(status_code=500, detail=detailed_error)
+
+
+@app.post("/askstream")
+async def ask_question(request: Request, user_request: QuestionRequest):
+    user_question = str(user_request.question) if user_request.question else ""
+    print(f"用户问题：{user_question}")
+
+    rag_url = request.app.state.rag_mcp_url
+    web_url = request.app.state.web_mcp_url
+
+    if not rag_url or not web_url:
+        raise HTTPException(status_code=500, detail="MCP server URLs not configured.")
+
+    async def event_stream():
+        try:
+            # --- 第一阶段：RAG ---
+            async with streamablehttp_client(rag_url) as (read_stream, write_stream, get_session_id):
+                async with ClientSession(read_stream, write_stream) as session:
+                    await session.initialize()
+                    rag_tools = await load_mcp_tools(session)
+                    rag_agent = create_react_agent(model, rag_tools)
+                    
+                    with open(searchinrag_prompt_path, "r", encoding="utf-8") as file:
+                        template = file.read()
+                    first_input = template.format(user_question=user_question)
+                    rag_result = await rag_agent.ainvoke({"messages": [HumanMessage(content=first_input)]})
+                    base_info = rag_result["messages"][-1].content
+                    yield json.dumps({"event": "rag_result", "data": base_info}, ensure_ascii=False) + "\n"
+
+            # --- 第二阶段：Web Search ---
+            async with streamablehttp_client(web_url) as (read_stream, write_stream, get_session_id):
+                async with ClientSession(read_stream, write_stream) as session:
+                    await session.initialize()
+                    web_tools = await load_mcp_tools(session)
+                    web_agent = create_react_agent(model, web_tools)
+                    
+                    with open(searchinweb_prompt_path, "r", encoding="utf-8") as file:
+                        template = file.read()
+                    final_input = template.format(user_question=user_question, base_info=base_info)
+                    web_result = await web_agent.ainvoke(
+                        {"messages": [HumanMessage(content=final_input)]},
+                        config={"recursion_limit": 75}
+                    )
+                    web_info = web_result["messages"][-1].content
+                    yield json.dumps({"event": "web_result", "data": web_info}, ensure_ascii=False) + "\n"
+
+            # --- 第三阶段：小说生成（这里才是重点流式）---
+            with open(writenovel_prompt_path, "r", encoding="utf-8") as file:
+                template = file.read()
+            final_input = template.format(user_question=user_question, base_info=base_info, web_info=web_info)
+
+            # 假设 model_writer 支持流式生成（如调用 LLM 的 stream=True）
+            novel_agent = create_react_agent(model_writer, tools=[])
+            
+            # 使用 astream 而不是 ainvoke
+            async for chunk in novel_agent.astream({"messages": [HumanMessage(content=final_input)]}):
+                # 提取文本内容并发送
+                if "messages" in chunk and len(chunk["messages"]) > 0:
+                    content = chunk["messages"][-1].content
+                    if content:
+                        # 发送文本片段
+                        yield json.dumps({"event": "token", "data": content}, ensure_ascii=False) + "\n"
+
+            # 完成信号
+            yield json.dumps({"event": "done", "data": ""}, ensure_ascii=False) + "\n"
+
+        except Exception as e:
+            error_msg = f"{type(e).__name__}: {str(e)}"
+            yield json.dumps({"event": "error", "data": error_msg}, ensure_ascii=False) + "\n"
+            print(f"[STREAM ERROR] {error_msg}")
+
+    # 返回流式响应
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
     

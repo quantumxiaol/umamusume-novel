@@ -183,3 +183,7 @@ The software may generate content, output, or data as a result of its operation.
 关于生成内容的免责声明：
 
 本软件在运行过程中可能生成内容、输出或数据。版权持有者对这些生成内容的准确性、可靠性或适用性不提供任何形式的担保。使用本软件及其生成内容的风险完全由使用者自行承担。版权持有者不对因使用或误用生成内容而造成的任何损害、损失或后果承担责任。
+
+curl -X POST "http://127.0.0.1:1111/askstream" \
+     -H "Content-Type: application/json" \
+     -d '{"question": "请创作赛马娘米浴和训练员的感人故事"}'
