@@ -279,22 +279,22 @@ async def ask_question(request: Request, user_request: QuestionRequest):
                     web_info = web_result["messages"][-1].content
                     yield json.dumps({"event": "web_result", "data": web_info}, ensure_ascii=False) + "\n"
 
-            # --- 第三阶段：小说生成（这里才是重点流式）---
+            # --- 第三阶段：小说生成---
             with open(writenovel_prompt_path, "r", encoding="utf-8") as file:
                 template = file.read()
             final_input = template.format(user_question=user_question, base_info=base_info, web_info=web_info)
 
-            # 假设 model_writer 支持流式生成（如调用 LLM 的 stream=True）
             novel_agent = create_react_agent(model_writer, tools=[])
             
-            # 使用 astream 而不是 ainvoke
-            async for chunk in novel_agent.astream({"messages": [HumanMessage(content=final_input)]}):
-                # 提取文本内容并发送
-                if "messages" in chunk and len(chunk["messages"]) > 0:
-                    content = chunk["messages"][-1].content
+            novel_result = await novel_agent.ainvoke({"messages": [HumanMessage(content=final_input)]})
+            
+            if "messages" in novel_result and len(novel_result["messages"]) > 0:
+                for message in novel_result["messages"]:
+                    content = message.content
                     if content:
-                        # 发送文本片段
                         yield json.dumps({"event": "token", "data": content}, ensure_ascii=False) + "\n"
+            else:
+                yield json.dumps({"event": "error", "data": "No content generated"}, ensure_ascii=False) + "\n"
 
             # 完成信号
             yield json.dumps({"event": "done", "data": ""}, ensure_ascii=False) + "\n"

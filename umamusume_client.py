@@ -3,7 +3,15 @@ Run
     Terminal:
         python umamusume_client.py -u http://127.0.0.1:1111/ask
 
+curl -X POST http://127.0.0.1:1111/ask \
+     -H "Content-Type: application/json" \
+     -d '{"question":"帮我创作一篇爱慕织姬的甜甜的同人文"}'
 
+
+curl -X POST "http://127.0.0.1:1111/askstream" \
+     -H "Content-Type: application/json" \
+     -d '{"question": "请创作赛马娘米浴和训练员的感人故事"}'
+        
     帮我创作一篇"爱慕织姬"的甜甜的同人文，你可以先去RAG上查找准确的信息，再通过web到wiki上搜索相关角色的信息，据此创作符合性格的同人小说
 """
 
