@@ -133,9 +133,14 @@ async def start_main_server(server_port: int, rag_port: int, web_port: int):
 
 async def run_client(server_port: int):
     """启动客户端"""
+    client_url = f"http://{DEFAULT_HOST}:{server_port}/ask"
+    # cmd = [
+    #     sys.executable, "umamusume_client.py", # 假设在项目根目录
+    #     "-u", f"http://{DEFAULT_HOST}:{server_port}/ask"
+    # ]
     cmd = [
-        sys.executable, "umamusume_client.py", # 假设在项目根目录
-        "-u", f"http://{DEFAULT_HOST}:{server_port}/ask"
+        sys.executable, "-m", "src.umamusume_novel.client.cli",
+        "-u", client_url
     ]
     print(f"💬 Starting Client: {' '.join(cmd)}")
     # 客户端是交互式的，让它在前台运行并接管终端

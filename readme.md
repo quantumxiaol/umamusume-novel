@@ -134,7 +134,8 @@ Custom Search JSON API 每天免费提供 100 次搜索查询。额外请求的�
         |   |-umamusume_novel/        # 主项目包
         |       |-client/             # 客户端模块
         |       |   |-__init__.py     
-        |       |   |-umamusume_client.py  # 客户端实现文件(未实现)
+        |       |   |-umamusume_client.py  # 客户端实现文件
+        |       |   |-cli.py               # 命令行调用
         |       |
         |       |-crawler/            # 爬虫模块
         |       |   |-__init__.py     
