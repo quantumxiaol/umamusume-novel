@@ -40,6 +40,8 @@ uv
 
 ## .env
 
+        cat .env.template > .env
+
 将.env.template复制为.env，修改其中的API_KEY。
 
 我测试时使用的LLM为QWEN，和OPENAI的格式是兼容的。如果要使用OPENAI，直接修改INFO_LLM_MODEL_NAME等即可，不用管前缀和下面的OPENAI_API_KEY。
@@ -80,6 +82,13 @@ WRITER_LLM_MODEL_NAME 可以使用一些更擅长创作的模型。
 
 运行`python main.py with-client`，开启后输入创作内容。
 
+前端展示：
+
+终端1中运行`python main.py server-only`，开启服务。
+
+终端2中运行`cd frontend`进入 frontend ,运行`pnpm run dev`启动前端开发服务器
+
+启动成功后，终端会显示本地访问地址，通常是 `http://localhost:5173/`。在浏览器中打开这个地址即可访问前端界面。
 
 在log文件中查看工具调用和服务器的输出。
 
@@ -163,6 +172,30 @@ Custom Search JSON API 每天免费提供 100 次搜索查询。额外请求的�
         |           |-config.py       # Web配置文件
         |           |-main.py         # Web应用主入口
         |           |-webinfomcp.py   # Web MCP服务实现
+        |-frontend/
+        |   |- public/                    # 静态资源文件
+        |   |   |- favicon.ico            # 网站图标
+        |   |
+        |   |- src/                       # 前端源代码根目录
+        |   |   |- assets/                # 组件内使用的静态资源 (如图片、样式)
+        |   |   |
+        |   |   |- services/              # 封装与后端 API 交互的逻辑
+        |   |   |   |- api.js             # API 请求函数
+        |   |   |
+        |   |   |- stores/                # Pinia 状态管理 stores
+        |   |   |   |- novelStore.js      # 管理小说生成相关状态
+        |   |   |
+        |   |   |
+        |   |   |- App.vue                # 根 Vue 组件
+        |   |   |- main.js                # Vue 应用入口文件
+        |   |
+        |   |- index.html                 # 主页面 HTML 模板
+        |   |- .env                       # 环境变量配置文件 
+        |   |- .env.example               # 环境变量配置示例文件
+        |   |- vite.config.js             # Vite 构建工具配置文件
+        |   |- package.json               # 项目配置、依赖和脚本定义
+        |   |- pnpm-lock.yaml             # pnpm 生成的依赖锁定文件
+        |   |- README.md                  # 前端子项目的说明文档
         |-
         |-tests/                      # 测试脚本
         |   |-testonbing.py           # 测试bing搜索
