@@ -1,10 +1,24 @@
+# Python-generated files
 __pycache__/
-.env
-config.yaml
-*.jpg
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+
+# Python venv
 .venv/
 venv/
 *.log
 *.pid
 *.pkl
 *.egg-info
+
+.env
+config.yaml
+*.jpg
+
+# vue
+
+node_modules/
