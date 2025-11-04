@@ -13,9 +13,15 @@ const isLoading = computed(() => novelStore.isLoading);
 const error = computed(() => novelStore.error);
 const streamMode = computed(() => novelStore.streamMode);
 const currentStatus = computed(() => novelStore.currentStatus);
+const ragResult = computed(() => novelStore.ragResult);
+const webResult = computed(() => novelStore.webResult);
 
 // 本地响应式引用，用于绑定输入框
 const localPrompt = ref(novelStore.prompt);
+
+// 折叠状态
+const showRagResult = ref(false);
+const showWebResult = ref(false);
 
 // 处理输入变化
 const handlePromptInput = (event) => {
@@ -97,7 +103,32 @@ const handleClear = () => {
         </div>
       </div>
 
-      <div class="output-section" v-if="generatedNovel || characterImage || isLoading">
+      <div class="output-section" v-if="generatedNovel || characterImage || isLoading || ragResult || webResult">
+        <!-- RAG 搜索结果（可折叠） -->
+        <div class="collapsible-section" v-if="ragResult">
+          <div class="collapsible-header" @click="showRagResult = !showRagResult">
+            <span class="toggle-icon">{{ showRagResult ? '▼' : '▶' }}</span>
+            <h3>RAG 搜索结果</h3>
+            <span class="result-length">({{ ragResult.length }} 字符)</span>
+          </div>
+          <div v-show="showRagResult" class="collapsible-content">
+            <pre class="result-text">{{ ragResult }}</pre>
+          </div>
+        </div>
+
+        <!-- Web 搜索结果（可折叠） -->
+        <div class="collapsible-section" v-if="webResult">
+          <div class="collapsible-header" @click="showWebResult = !showWebResult">
+            <span class="toggle-icon">{{ showWebResult ? '▼' : '▶' }}</span>
+            <h3>Web 搜索结果</h3>
+            <span class="result-length">({{ webResult.length }} 字符)</span>
+          </div>
+          <div v-show="showWebResult" class="collapsible-content">
+            <pre class="result-text">{{ webResult }}</pre>
+          </div>
+        </div>
+
+        <!-- 生成的小说 -->
         <div class="novel-output" v-if="generatedNovel || (isLoading && streamMode)">
           <h2>生成的小说:</h2>
           <pre class="novel-text" :class="{ 'streaming': isLoading && streamMode }">
@@ -109,6 +140,7 @@ const handleClear = () => {
           </div>
         </div>
 
+        <!-- 角色图片 -->
         <div class="image-output" v-if="characterImage">
           <h2>角色图片:</h2>
           <img :src="characterImage" alt="Character Image" class="character-image" />
@@ -284,5 +316,100 @@ header h1 {
   50% {
     opacity: 0.5;
   }
+}
+
+/* 可折叠区域样式 */
+.collapsible-section {
+  margin-bottom: 20px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.collapsible-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  background-color: #f5f5f5;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.collapsible-header:hover {
+  background-color: #e8e8e8;
+}
+
+.collapsible-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  flex: 1;
+}
+
+.toggle-icon {
+  margin-right: 10px;
+  color: #42b983;
+  font-size: 14px;
+  transition: transform 0.2s ease;
+}
+
+.result-length {
+  font-size: 12px;
+  color: #999;
+  margin-left: 10px;
+}
+
+.collapsible-content {
+  padding: 15px;
+  background-color: #fafafa;
+  border-top: 1px solid #ddd;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
+.result-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  background-color: #fff;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  margin: 0;
+}
+
+/* 美化滚动条 */
+.result-text::-webkit-scrollbar {
+  width: 8px;
+}
+
+.result-text::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.result-text::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.result-text::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 </style>
