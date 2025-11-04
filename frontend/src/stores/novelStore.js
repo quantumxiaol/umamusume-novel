@@ -12,6 +12,8 @@ export const useNovelStore = defineStore('novel', {
     streamMode: false, // 是否使用流式模式
     streamCancelled: false, // 是否取消流式请求
     currentStatus: '', // 当前状态信息（用于显示进度）
+    ragResult: '', // RAG 搜索结果
+    webResult: '', // Web 搜索结果
   }),
 
   actions: {
@@ -33,6 +35,8 @@ export const useNovelStore = defineStore('novel', {
       this.characterImage = '';
       this.streamCancelled = false;
       this.currentStatus = '';
+      this.ragResult = '';
+      this.webResult = '';
 
       try {
         if (this.streamMode) {
@@ -59,8 +63,6 @@ export const useNovelStore = defineStore('novel', {
     },
     async generateNovelStream() {
       // 流式生成小说
-      let ragResult = '';
-      let webResult = '';
       let novelContent = '';
 
       await generateNovelStream(this.prompt, (eventData) => {
@@ -78,13 +80,13 @@ export const useNovelStore = defineStore('novel', {
             break;
           
           case 'rag_result':
-            ragResult = data || '';
-            console.log('[Store] RAG result received');
+            this.ragResult = data || '';
+            console.log('[Store] RAG result received, length:', this.ragResult.length);
             break;
           
           case 'web_result':
-            webResult = data || '';
-            console.log('[Store] Web result received');
+            this.webResult = data || '';
+            console.log('[Store] Web result received, length:', this.webResult.length);
             break;
           
           case 'token':
@@ -128,6 +130,8 @@ export const useNovelStore = defineStore('novel', {
       this.error = null;
       this.streamCancelled = false;
       this.currentStatus = '';
+      this.ragResult = '';
+      this.webResult = '';
       // 注意：不清除 prompt，用户可能想重新生成
     }
   },
