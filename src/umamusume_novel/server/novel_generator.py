@@ -44,7 +44,7 @@ from langchain.prompts import PromptTemplate
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import OpenAI, ChatOpenAI
 from openai import OpenAI as OpenAIClient
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessageChunk
 from typing import TypedDict, List
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -236,9 +236,9 @@ async def ask_question(request: Request, user_request: QuestionRequest):
 
 
 @app.post("/askstream")
-async def ask_question(request: Request, user_request: QuestionRequest):
+async def ask_question_stream(request: Request, user_request: QuestionRequest):
     user_question = str(user_request.question) if user_request.question else ""
-    print(f"用户问题：{user_question}")
+    print(f"[STREAM] 用户问题：{user_question}")
 
     rag_url = request.app.state.rag_mcp_url
     web_url = request.app.state.web_mcp_url
@@ -249,6 +249,9 @@ async def ask_question(request: Request, user_request: QuestionRequest):
     async def event_stream():
         try:
             # --- 第一阶段：RAG ---
+            yield json.dumps({"event": "status", "data": "正在RAG搜索中，查找相关角色信息..."}, ensure_ascii=False) + "\n"
+            print("[STREAM] 开始第一阶段：RAG 搜索")
+            
             async with streamablehttp_client(rag_url) as (read_stream, write_stream, get_session_id):
                 async with ClientSession(read_stream, write_stream) as session:
                     await session.initialize()
@@ -260,9 +263,14 @@ async def ask_question(request: Request, user_request: QuestionRequest):
                     first_input = template.format(user_question=user_question)
                     rag_result = await rag_agent.ainvoke({"messages": [HumanMessage(content=first_input)]})
                     base_info = rag_result["messages"][-1].content
+                    print(f"[STREAM] RAG 阶段完成，基础信息长度: {len(base_info)}")
+                    yield json.dumps({"event": "status", "data": "RAG搜索完成！"}, ensure_ascii=False) + "\n"
                     yield json.dumps({"event": "rag_result", "data": base_info}, ensure_ascii=False) + "\n"
 
             # --- 第二阶段：Web Search ---
+            yield json.dumps({"event": "status", "data": "正在Web搜索中，获取更多相关信息..."}, ensure_ascii=False) + "\n"
+            print("[STREAM] 开始第二阶段：Web 搜索")
+            
             async with streamablehttp_client(web_url) as (read_stream, write_stream, get_session_id):
                 async with ClientSession(read_stream, write_stream) as session:
                     await session.initialize()
@@ -277,32 +285,62 @@ async def ask_question(request: Request, user_request: QuestionRequest):
                         config={"recursion_limit": 75}
                     )
                     web_info = web_result["messages"][-1].content
+                    print(f"[STREAM] Web 搜索阶段完成，信息长度: {len(web_info)}")
+                    yield json.dumps({"event": "status", "data": "Web搜索完成！"}, ensure_ascii=False) + "\n"
                     yield json.dumps({"event": "web_result", "data": web_info}, ensure_ascii=False) + "\n"
 
-            # --- 第三阶段：小说生成---
-            with open(writenovel_prompt_path, "r", encoding="utf-8") as file:
-                template = file.read()
-            final_input = template.format(user_question=user_question, base_info=base_info, web_info=web_info)
+            # --- 第三阶段：小说生成（流式）---
+            yield json.dumps({"event": "status", "data": "开始生成小说..."}, ensure_ascii=False) + "\n"
+            print("[STREAM] 开始第三阶段：小说生成")
+            try:
+                with open(writenovel_prompt_path, "r", encoding="utf-8") as file:
+                    template = file.read()
+                final_input = template.format(user_question=user_question, base_info=base_info, web_info=web_info)
 
-            novel_agent = create_react_agent(model_writer, tools=[])
-            
-            novel_result = await novel_agent.ainvoke({"messages": [HumanMessage(content=final_input)]})
-            
-            if "messages" in novel_result and len(novel_result["messages"]) > 0:
-                for message in novel_result["messages"]:
-                    content = message.content
-                    if content:
-                        yield json.dumps({"event": "token", "data": content}, ensure_ascii=False) + "\n"
-            else:
-                yield json.dumps({"event": "error", "data": "No content generated"}, ensure_ascii=False) + "\n"
+                # 使用流式调用模型生成小说
+                print("[STREAM] 调用模型生成小说（流式）...")
+                
+                # 直接使用 model_writer 的流式接口，而不是通过 agent
+                async for chunk in model_writer.astream([HumanMessage(content=final_input)]):
+                    # LangChain 的流式输出返回 AIMessageChunk 对象
+                    if isinstance(chunk, AIMessageChunk):
+                        if chunk.content:
+                            # 流式输出每个 token chunk
+                            yield json.dumps({"event": "token", "data": chunk.content}, ensure_ascii=False) + "\n"
+                    elif hasattr(chunk, 'content') and chunk.content:
+                        # 兼容其他格式
+                        yield json.dumps({"event": "token", "data": chunk.content}, ensure_ascii=False) + "\n"
+                    elif isinstance(chunk, dict) and 'content' in chunk:
+                        yield json.dumps({"event": "token", "data": chunk['content']}, ensure_ascii=False) + "\n"
+                
+                print("[STREAM] 模型流式调用完成")
 
-            # 完成信号
-            yield json.dumps({"event": "done", "data": ""}, ensure_ascii=False) + "\n"
+                # 完成信号
+                print("[STREAM] 发送完成信号")
+                yield json.dumps({"event": "done", "data": ""}, ensure_ascii=False) + "\n"
+                
+            except Exception as e:
+                error_msg = f"Error in post_writer: {type(e).__name__}: {str(e)}"
+                print(f"[STREAM ERROR] {error_msg}")
+                traceback_str = traceback.format_exc()
+                print(f"[STREAM ERROR] Full Traceback:\n{traceback_str}")
+                yield json.dumps({"event": "error", "data": error_msg}, ensure_ascii=False) + "\n"
 
-        except Exception as e:
-            error_msg = f"{type(e).__name__}: {str(e)}"
-            yield json.dumps({"event": "error", "data": error_msg}, ensure_ascii=False) + "\n"
+        except ExceptionGroup as eg:
+            # 处理 ExceptionGroup
+            error_msg = f"ExceptionGroup: {len(eg.exceptions)} sub-exceptions"
             print(f"[STREAM ERROR] {error_msg}")
+            for i, exc in enumerate(eg.exceptions):
+                print(f"[STREAM ERROR] Sub-exception {i}: {type(exc).__name__}: {str(exc)}")
+            traceback_str = traceback.format_exc()
+            print(f"[STREAM ERROR] Full Traceback:\n{traceback_str}")
+            yield json.dumps({"event": "error", "data": error_msg}, ensure_ascii=False) + "\n"
+        except BaseException as e:
+            error_msg = f"{type(e).__name__}: {str(e)}"
+            print(f"[STREAM ERROR] {error_msg}")
+            traceback_str = traceback.format_exc()
+            print(f"[STREAM ERROR] Full Traceback:\n{traceback_str}")
+            yield json.dumps({"event": "error", "data": error_msg}, ensure_ascii=False) + "\n"
 
     # 返回流式响应
     return StreamingResponse(event_stream(), media_type="text/event-stream")
