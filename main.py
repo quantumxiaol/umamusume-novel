@@ -131,18 +131,27 @@ async def start_main_server(server_port: int, rag_port: int, web_port: int):
     print(f"   -> Main Server PID: {process.pid}, Log: {log_file}")
     return process, log_file
 
-async def run_client(server_port: int):
-    """启动客户端"""
-    client_url = f"http://{DEFAULT_HOST}:{server_port}/ask"
-    # cmd = [
-    #     sys.executable, "umamusume_client.py", # 假设在项目根目录
-    #     "-u", f"http://{DEFAULT_HOST}:{server_port}/ask"
-    # ]
+async def run_client(server_port: int, stream_mode: bool = True):
+    """启动客户端
+    
+    Args:
+        server_port: 服务器端口
+        stream_mode: 是否使用流式模式（默认为 True）
+    """
+    server_url = f"http://{DEFAULT_HOST}:{server_port}"
+    
     cmd = [
         sys.executable, "-m", "src.umamusume_novel.client.cli",
-        "-u", client_url
+        "-u", server_url
     ]
-    print(f"💬 Starting Client: {' '.join(cmd)}")
+    
+    # 如果启用流式模式，添加 --stream 参数
+    if stream_mode:
+        cmd.append("--stream")
+    
+    mode_text = "流式" if stream_mode else "非流式"
+    print(f"💬 Starting Client ({mode_text} 模式): {' '.join(cmd)}")
+    
     # 客户端是交互式的，让它在前台运行并接管终端
     # 使用 subprocess.run 会阻塞，直到客户端退出
     try:
@@ -153,24 +162,44 @@ async def run_client(server_port: int):
         print("\n🛑 Client interrupted by user.")
 
 # --- 主逻辑 ---
-async def run_full_stack(rag_port: int, web_port: int, server_port: int, start_client: bool):
-    """运行完整的应用栈"""
+async def run_full_stack(
+    rag_port: int, 
+    web_port: int, 
+    server_port: int, 
+    start_client: bool = False,
+    client_stream_mode: bool = True
+):
+    """运行完整的应用栈
+    
+    Args:
+        rag_port: RAG MCP 服务端口
+        web_port: Web MCP 服务端口
+        server_port: 主服务器端口
+        start_client: 是否启动客户端
+        client_stream_mode: 客户端是否使用流式模式（默认为 True）
+    """
     global _processes_to_cleanup
 
     # 设置信号处理
     signal.signal(signal.SIGINT, signal_handler)
-    # signal.signal(signal.SIGTERM, signal_handler) # 主进程用 Ctrl+C 即可
 
-    print("==========================================")
-    print(" An AI Agent write Umamusume Novel - Full Stack Start ")
-    print(" Please ensure your Python virtual environment is activated.")
-    print("==========================================")
-    print(f"🔧 Ports: RAG={rag_port}, Web={web_port}, Server={server_port}")
-    print("")
+    print("=" * 60)
+    print("  赛马娘同人文生成系统 - 完整服务栈启动".center(56))
+    print("=" * 60)
+    print(f"📌 环境: 请确保已激活 Python 虚拟环境")
+    print(f"🔧 端口配置:")
+    print(f"   • RAG MCP:    {rag_port}")
+    print(f"   • Web MCP:    {web_port}")
+    print(f"   • 主服务器:   {server_port}")
+    if start_client:
+        mode_text = "流式" if client_stream_mode else "非流式"
+        print(f"   • 客户端:     {mode_text} 模式")
+    print("=" * 60)
+    print()
 
     try:
         # 1. 启动 RAG 和 Web MCP (并发)
-        print("🚀 Initiating MCP services startup...")
+        print("🚀 [步骤 1/3] 启动 MCP 服务...")
         rag_task = start_rag_mcp(rag_port)
         web_task = start_web_mcp(web_port)
         
@@ -187,56 +216,84 @@ async def run_full_stack(rag_port: int, web_port: int, server_port: int, start_c
         rag_ready, web_ready = await asyncio.gather(wait_rag_task, wait_web_task)
 
         if not (rag_ready and web_ready):
-            print("❌ Failed to start one or more MCP services. Exiting.")
+            print("❌ MCP 服务启动失败，退出。")
             cleanup()
             sys.exit(1)
 
-        print("✅ All MCP services are ready.")
+        print("✅ MCP 服务就绪")
+        print()
 
         # 3. 启动主服务器
-        print("🚀 Initiating Main Server startup...")
+        print("🚀 [步骤 2/3] 启动主服务器...")
         server_process, server_log = await start_main_server(server_port, rag_port, web_port)
         
-        # 4. 等待主服务器就绪 (简单等待或检查日志)
+        # 4. 等待主服务器就绪
         server_indicator = [f"Uvicorn running on http://{DEFAULT_HOST}:{server_port}", "Application startup complete"]
         server_ready = await wait_for_logs(server_log, server_indicator, timeout=30)
         
         if not server_ready:
-            print("❌ Main Server failed to start in time. Exiting.")
+            print("❌ 主服务器启动超时，退出。")
             cleanup()
             sys.exit(1)
         
-        print("✅ Main Server is ready.")
+        print("✅ 主服务器就绪")
+        print()
 
         # 5. 启动客户端 (如果需要)
         if start_client:
-            print("🚀 Initiating Client startup...")
-            await run_client(server_port)
+            print("🚀 [步骤 3/3] 启动客户端...")
+            await run_client(server_port, client_stream_mode)
         else:
-            print("🟢 All services are running in the background.")
-            print(f"   🌐 Main Server: http://{DEFAULT_HOST}:{server_port}/ask")
-            print(f"   📄 Logs are in the '{LOGS_DIR}' directory.")
-            print("   🛑 Press Ctrl+C in this terminal to stop all services.")
+            print("=" * 60)
+            print("🟢 所有服务已启动并在后台运行")
+            print("=" * 60)
+            print(f"📍 服务地址:")
+            print(f"   • 非流式: http://{DEFAULT_HOST}:{server_port}/ask")
+            print(f"   • 流式:   http://{DEFAULT_HOST}:{server_port}/askstream")
+            print(f"   • RAG MCP: http://{DEFAULT_HOST}:{rag_port}/mcp")
+            print(f"   • Web MCP: http://{DEFAULT_HOST}:{web_port}/mcp")
+            print()
+            print(f"📄 日志目录: {LOGS_DIR}/")
+            print(f"🛑 按 Ctrl+C 停止所有服务")
+            print("=" * 60)
+            
             # 如果不启动客户端，主进程需要等待中断信号
             try:
-                # 简单地等待，直到收到 SIGINT
                 while True:
                     await asyncio.sleep(1)
             except KeyboardInterrupt:
-                pass # 允许信号处理函数接管
+                pass
 
     except Exception as e:
-        print(f"\n💥 Unexpected error during startup: {e}")
+        print(f"\n💥 启动过程中发生错误: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         cleanup()
-        print("👋 Full stack shutdown complete.")
+        print("\n👋 服务栈已完全关闭")
 
 # --- 命令行入口 ---
 def main():
     parser = argparse.ArgumentParser(
-        description="启动赛马娘小说生成完整服务栈 (RAG MCP, Web MCP, Main Server) 并可选启动客户端",
-        formatter_class=argparse.RawTextHelpFormatter # 保持帮助文本格式
+        description="赛马娘同人文生成系统 - 完整服务栈启动工具",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="""
+使用示例:
+  # 仅启动服务器（后台运行）
+  python main.py server-only
+  
+  # 启动服务器和客户端（流式模式，默认）
+  python main.py with-client
+  
+  # 启动服务器和客户端（非流式模式）
+  python main.py with-client --no-stream
+  
+  # 自定义端口
+  python main.py server-only -sp 8080 -rp 7777 -wp 7778
+        """
     )
+    
+    # 位置参数：启动模式
     parser.add_argument(
         "action",
         nargs='?', 
@@ -244,25 +301,68 @@ def main():
         default='server-only',
         help=(
             "启动模式:\n"
-            "  server-only   - 仅启动服务 (RAG, Web, Main Server) 并在后台运行 (默认)\n"
-            "  with-client   - 启动服务并立即启动客户端进行交互"
+            "  server-only   - 仅启动服务 (默认)\n"
+            "  with-client   - 启动服务 + 客户端"
         )
     )
-    parser.add_argument("-rp", "--rag-port", type=int, default=DEFAULT_RAG_PORT, help=f"RAG MCP 端口 (默认: {DEFAULT_RAG_PORT})")
-    parser.add_argument("-wp", "--web-port", type=int, default=DEFAULT_WEB_PORT, help=f"Web MCP 端口 (默认: {DEFAULT_WEB_PORT})")
-    parser.add_argument("-sp", "--server-port", type=int, default=DEFAULT_SERVER_PORT, help=f"主服务器端口 (默认: {DEFAULT_SERVER_PORT})")
+    
+    # 端口配置
+    port_group = parser.add_argument_group('端口配置')
+    port_group.add_argument(
+        "-rp", "--rag-port", 
+        type=int, 
+        default=DEFAULT_RAG_PORT, 
+        help=f"RAG MCP 端口 (默认: {DEFAULT_RAG_PORT})"
+    )
+    port_group.add_argument(
+        "-wp", "--web-port", 
+        type=int, 
+        default=DEFAULT_WEB_PORT, 
+        help=f"Web MCP 端口 (默认: {DEFAULT_WEB_PORT})"
+    )
+    port_group.add_argument(
+        "-sp", "--server-port", 
+        type=int, 
+        default=DEFAULT_SERVER_PORT, 
+        help=f"主服务器端口 (默认: {DEFAULT_SERVER_PORT})"
+    )
+    
+    # 客户端配置
+    client_group = parser.add_argument_group('客户端配置')
+    client_group.add_argument(
+        "--stream", 
+        dest="stream_mode",
+        action="store_true",
+        default=True,
+        help="客户端使用流式模式 (默认)"
+    )
+    client_group.add_argument(
+        "--no-stream", 
+        dest="stream_mode",
+        action="store_false",
+        help="客户端使用非流式模式"
+    )
     
     args = parser.parse_args()
 
+    # 确定是否启动客户端
     start_client = (args.action == 'with-client')
 
     # 运行异步主函数
     try:
-        asyncio.run(run_full_stack(args.rag_port, args.web_port, args.server_port, start_client))
+        asyncio.run(run_full_stack(
+            rag_port=args.rag_port,
+            web_port=args.web_port,
+            server_port=args.server_port,
+            start_client=start_client,
+            client_stream_mode=args.stream_mode
+        ))
     except KeyboardInterrupt:
-        print("\n🛑 KeyboardInterrupt received in main.")
+        print("\n🛑 收到中断信号")
     except Exception as e:
-        print(f"\n💥 Unexpected error in main process: {e}")
+        print(f"\n💥 主进程发生错误: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         cleanup()
 

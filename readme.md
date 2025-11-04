@@ -78,11 +78,26 @@ WRITER_LLM_MODEL_NAME 可以使用一些更擅长创作的模型。
 
 通过修改`./scripts/run-param.sh`中的端口来修改配置。
 
-方法二：
+方法二：命令行客户端
 
-运行`python main.py with-client`，开启后输入创作内容。
+```bash
+# 方式 1：启动服务器并直接进入流式客户端（推荐）
+python main.py with-client
 
-前端展示：
+# 方式 2：启动服务器并进入非流式客户端
+python main.py with-client --no-stream
+
+# 方式 3：仅启动服务器（后台运行）
+python main.py server-only
+# 然后在另一个终端使用客户端
+python -m src.umamusume_novel.client.cli --stream
+```
+
+**客户端模式说明：**
+- **流式模式（默认）**：实时显示生成过程，包括 RAG 搜索、Web 搜索、生成内容
+- **非流式模式**：等待完整结果后一次性显示
+
+方法三：前端展示
 
 终端1中运行`python main.py server-only`，开启服务。
 
@@ -115,6 +130,19 @@ Google:需要设置适当的 API 密钥和环境变量。要进行设置，请�
 Custom Search JSON API 每天免费提供 100 次搜索查询。额外请求的费用为每 1000 次查询 $5，每天最多 1 万次查询。
 
 [监控](https://console.cloud.google.com/apis/dashboard?hl=zh-cn)
+
+## 服务配置
+
+## 默认端口配置
+
+使用以下默认端口：
+
+| 服务 | 端口 | 说明 |
+|------|------|------|
+| **主服务器** | `1111` | 小说生成主服务，提供 `/ask` 和 `/askstream` 接口 |
+| **RAG MCP** | `7777` | RAG 知识库检索服务 |
+| **Web MCP** | `7778` | Web 搜索服务 |
+| **前端开发服务器** | `5173` | Vue 前端开发服务器（开发模式） |
 
 ## 项目结构
 
