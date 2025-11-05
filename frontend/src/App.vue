@@ -1,8 +1,11 @@
 <!-- frontend/src/App.vue -->
 <script setup>
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useNovelStore } from '@/stores/novelStore';
+import LanguageSelector from './components/LanguageSelector.vue';
 
+const { t } = useI18n();
 const novelStore = useNovelStore();
 
 // 计算属性，方便在模板中使用状态
@@ -54,99 +57,105 @@ const handleClear = () => {
 
 <template>
   <div id="app">
-    <header>
-      <h1>赛马娘同人小说生成器</h1>
-    </header>
+    <div class="background-overlay"></div>
+    <div class="container">
+      <header>
+        <div class="header-content">
+          <h1>{{ t('app.title') }}</h1>
+          <LanguageSelector />
+        </div>
+      </header>
 
-    <main>
-      <div class="input-section">
-        <label for="prompt-input">输入你的创作指令:</label>
-        <textarea
-          id="prompt-input"
-          v-model="localPrompt"
-          :disabled="isLoading"
-          placeholder="例如：请写一篇关于无声铃鹿在训练中遇到挫折，但最终克服困难的故事。"
-          rows="4"
-          cols="50"
-        ></textarea>
-        <div class="mode-toggle">
-          <label class="toggle-label">
-            <input
-              type="checkbox"
-              :checked="streamMode"
-              @change="handleStreamModeToggle"
-              :disabled="isLoading"
-            />
-            <span>流式模式（实时显示生成内容）</span>
-          </label>
-        </div>
-        <div class="button-group">
-          <button @click="handleGenerate" :disabled="isLoading || !localPrompt.trim()">
-            {{ isLoading ? (streamMode ? '生成中...' : '生成中...') : '生成小说' }}
-          </button>
-          <button 
-            v-if="isLoading && streamMode" 
-            @click="handleCancel" 
-            class="cancel-button"
-          >
-            取消生成
-          </button>
-          <button @click="handleClear" :disabled="isLoading">
-            清除结果
-          </button>
-        </div>
-        <div v-if="error" class="error-message">
-          错误: {{ error }}
-        </div>
-        <div v-if="currentStatus && streamMode" class="status-message">
-          {{ currentStatus }}
-        </div>
-      </div>
-
-      <div class="output-section" v-if="generatedNovel || characterImage || isLoading || ragResult || webResult">
-        <!-- RAG 搜索结果（可折叠） -->
-        <div class="collapsible-section" v-if="ragResult">
-          <div class="collapsible-header" @click="showRagResult = !showRagResult">
-            <span class="toggle-icon">{{ showRagResult ? '▼' : '▶' }}</span>
-            <h3>RAG 搜索结果</h3>
-            <span class="result-length">({{ ragResult.length }} 字符)</span>
+      <main>
+        <div class="input-section">
+          <label for="prompt-input">{{ t('input.label') }}</label>
+          <textarea
+            id="prompt-input"
+            v-model="localPrompt"
+            :disabled="isLoading"
+            :placeholder="t('input.placeholder')"
+            rows="6"
+            cols="50"
+          ></textarea>
+          <div class="mode-toggle">
+            <label class="toggle-label">
+              <input
+                type="checkbox"
+                :checked="streamMode"
+                @change="handleStreamModeToggle"
+                :disabled="isLoading"
+              />
+              <span>{{ t('input.streamMode') }}</span>
+            </label>
           </div>
-          <div v-show="showRagResult" class="collapsible-content">
-            <pre class="result-text">{{ ragResult }}</pre>
+          <div class="button-group">
+            <button @click="handleGenerate" :disabled="isLoading || !localPrompt.trim()">
+              {{ isLoading ? t('buttons.generating') : t('buttons.generate') }}
+            </button>
+            <button 
+              v-if="isLoading && streamMode" 
+              @click="handleCancel" 
+              class="cancel-button"
+            >
+              {{ t('buttons.cancel') }}
+            </button>
+            <button @click="handleClear" :disabled="isLoading">
+              {{ t('buttons.clear') }}
+            </button>
+          </div>
+          <div v-if="error" class="error-message">
+            {{ t('status.error') }}: {{ error }}
+          </div>
+          <div v-if="currentStatus && streamMode" class="status-message">
+            {{ currentStatus }}
           </div>
         </div>
 
-        <!-- Web 搜索结果（可折叠） -->
-        <div class="collapsible-section" v-if="webResult">
-          <div class="collapsible-header" @click="showWebResult = !showWebResult">
-            <span class="toggle-icon">{{ showWebResult ? '▼' : '▶' }}</span>
-            <h3>Web 搜索结果</h3>
-            <span class="result-length">({{ webResult.length }} 字符)</span>
+        <div class="output-section" v-if="generatedNovel || characterImage || isLoading || ragResult || webResult">
+          <!-- RAG 搜索结果（可折叠） -->
+          <div class="collapsible-section" v-if="ragResult">
+            <div class="collapsible-header" @click="showRagResult = !showRagResult">
+              <span class="toggle-icon">{{ showRagResult ? '▼' : '▶' }}</span>
+              <h3>{{ t('output.ragResult') }}</h3>
+              <span class="result-length">({{ ragResult.length }} {{ t('output.characters') }})</span>
+            </div>
+            <div v-show="showRagResult" class="collapsible-content">
+              <pre class="result-text">{{ ragResult }}</pre>
+            </div>
           </div>
-          <div v-show="showWebResult" class="collapsible-content">
-            <pre class="result-text">{{ webResult }}</pre>
-          </div>
-        </div>
 
-        <!-- 生成的小说 -->
-        <div class="novel-output" v-if="generatedNovel || (isLoading && streamMode)">
-          <h2>生成的小说:</h2>
-          <pre class="novel-text" :class="{ 'streaming': isLoading && streamMode }">
-            {{ generatedNovel || (isLoading && streamMode ? '正在生成中...' : '') }}
-          </pre>
-          <div v-if="isLoading && streamMode" class="streaming-indicator">
-            <span class="dot"></span>
-            <span>正在流式生成中...</span>
+          <!-- Web 搜索结果（可折叠） -->
+          <div class="collapsible-section" v-if="webResult">
+            <div class="collapsible-header" @click="showWebResult = !showWebResult">
+              <span class="toggle-icon">{{ showWebResult ? '▼' : '▶' }}</span>
+              <h3>{{ t('output.webResult') }}</h3>
+              <span class="result-length">({{ webResult.length }} {{ t('output.characters') }})</span>
+            </div>
+            <div v-show="showWebResult" class="collapsible-content">
+              <pre class="result-text">{{ webResult }}</pre>
+            </div>
+          </div>
+
+          <!-- 生成的小说 -->
+          <div class="novel-output" v-if="generatedNovel || (isLoading && streamMode)">
+            <h2>{{ t('output.novel') }}</h2>
+            <pre class="novel-text" :class="{ 'streaming': isLoading && streamMode }">
+              {{ generatedNovel || (isLoading && streamMode ? t('status.generating') : '') }}
+            </pre>
+            <div v-if="isLoading && streamMode" class="streaming-indicator">
+              <span class="dot"></span>
+              <span>{{ t('status.streaming') }}</span>
+            </div>
+          </div>
+
+          <!-- 角色图片 -->
+          <div class="image-output" v-if="characterImage">
+            <h2>{{ t('output.characterImage') }}</h2>
+            <img :src="characterImage" alt="Character Image" class="character-image" />
           </div>
         </div>
-
-        <!-- 角色图片 -->
-        <div class="image-output" v-if="characterImage">
-          <h2>角色图片:</h2>
-          <img :src="characterImage" alt="Character Image" class="character-image" />
-        </div>
-      </div>
-    </main>
+      </main>
+    </div>
   </div>
 </template>
 
@@ -157,37 +166,92 @@ const handleClear = () => {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
-  max-width: 800px;
-  margin: 60px auto;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  min-height: 100vh;
+  position: relative;
+  background-image: url('/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* 背景虚化遮罩层 */
+.background-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 1;
+}
+
+/* 主容器 */
+.container {
+  position: relative;
+  z-index: 2;
+  max-width: 1400px;
+  width: 90%;
+  margin: 0 auto;
+  padding: 40px 20px;
+  min-height: 100vh;
+}
+
+header {
+  margin-bottom: 30px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 header h1 {
-  margin-bottom: 20px;
+  margin: 0;
+  font-size: 2.5em;
+  color: #2c3e50;
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
+  flex: 1;
+  min-width: 300px;
 }
 
 .input-section {
-  margin-bottom: 30px;
+  margin-bottom: 40px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .input-section label {
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   font-weight: bold;
+  font-size: 18px;
+  text-align: left;
 }
 
 .input-section textarea {
   width: 100%;
-  padding: 10px;
+  padding: 15px;
   font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
   resize: vertical;
   box-sizing: border-box;
+  transition: border-color 0.3s ease;
+  min-height: 120px;
+}
+
+.input-section textarea:focus {
+  outline: none;
+  border-color: #42b983;
+  box-shadow: 0 0 0 3px rgba(66, 185, 131, 0.1);
 }
 
 .button-group {
@@ -217,23 +281,34 @@ header h1 {
 }
 
 .button-group button {
-  padding: 10px 20px;
-  margin-right: 10px;
+  padding: 12px 28px;
+  margin-right: 12px;
+  margin-top: 10px;
   font-size: 16px;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   background-color: #42b983;
   color: white;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .button-group button:hover:not(:disabled) {
   background-color: #359c6d;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.button-group button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .button-group button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .cancel-button {
@@ -263,21 +338,33 @@ header h1 {
 
 .output-section {
   text-align: left;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .output-section h2 {
-  border-bottom: 1px solid #eee;
-  padding-bottom: 5px;
+  border-bottom: 2px solid #42b983;
+  padding-bottom: 10px;
   margin-top: 20px;
+  margin-bottom: 15px;
+  font-size: 1.5em;
+  color: #2c3e50;
 }
 
 .novel-text {
-  white-space: pre-wrap; /* 保留换行和空格 */
+  white-space: pre-wrap;
   background-color: #f9f9f9;
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  overflow-x: auto; /* 如果内容太宽 */
+  padding: 25px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 16px;
+  line-height: 1.8;
+  min-height: 300px;
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
 .character-image {
@@ -321,50 +408,51 @@ header h1 {
 /* 可折叠区域样式 */
 .collapsible-section {
   margin-bottom: 20px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
   overflow: hidden;
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .collapsible-header {
   display: flex;
   align-items: center;
-  padding: 12px 15px;
-  background-color: #f5f5f5;
+  padding: 15px 20px;
+  background-color: rgba(245, 245, 245, 0.9);
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s ease;
 }
 
 .collapsible-header:hover {
-  background-color: #e8e8e8;
+  background-color: rgba(232, 232, 232, 0.9);
 }
 
 .collapsible-header h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: #2c3e50;
   flex: 1;
 }
 
 .toggle-icon {
-  margin-right: 10px;
+  margin-right: 12px;
   color: #42b983;
-  font-size: 14px;
+  font-size: 16px;
   transition: transform 0.2s ease;
 }
 
 .result-length {
-  font-size: 12px;
+  font-size: 13px;
   color: #999;
   margin-left: 10px;
 }
 
 .collapsible-content {
-  padding: 15px;
-  background-color: #fafafa;
-  border-top: 1px solid #ddd;
+  padding: 20px;
+  background-color: rgba(250, 250, 250, 0.9);
+  border-top: 2px solid #ddd;
   animation: slideDown 0.3s ease;
 }
 
@@ -375,7 +463,7 @@ header h1 {
   }
   to {
     opacity: 1;
-    max-height: 500px;
+    max-height: 1000px;
   }
 }
 
@@ -383,13 +471,13 @@ header h1 {
   white-space: pre-wrap;
   word-wrap: break-word;
   background-color: #fff;
-  padding: 12px;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  max-height: 400px;
+  padding: 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  max-height: 60vh;
   overflow-y: auto;
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 15px;
+  line-height: 1.8;
   color: #333;
   margin: 0;
 }
@@ -411,5 +499,72 @@ header h1 {
 
 .result-text::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .container {
+    max-width: 95%;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  header h1 {
+    font-size: 2em;
+    text-align: center;
+    min-width: auto;
+  }
+  
+  .container {
+    width: 95%;
+    padding: 20px 10px;
+  }
+  
+  .input-section,
+  .output-section {
+    padding: 20px;
+  }
+  
+  .input-section textarea {
+    min-height: 100px;
+    font-size: 14px;
+  }
+  
+  .button-group button {
+    padding: 10px 20px;
+    font-size: 14px;
+    margin-right: 8px;
+  }
+  
+  .novel-text,
+  .result-text {
+    font-size: 14px;
+    padding: 15px;
+  }
+  
+  .collapsible-header h3 {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  header h1 {
+    font-size: 1.5em;
+  }
+  
+  .input-section label {
+    font-size: 16px;
+  }
+  
+  .button-group button {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
 }
 </style>
