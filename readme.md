@@ -8,6 +8,10 @@
 
 下面是使用 RAG+Web Crawler 的方法进行怪文书写作的示例。
 
+## Demo
+
+<img src="resources/png/demo.gif" width="600" />
+
 ## ENV
 
 ### OS
@@ -106,6 +110,8 @@ python -m src.umamusume_novel.client.cli --stream
 启动成功后，终端会显示本地访问地址，通常是 `http://localhost:5173/`。在浏览器中打开这个地址即可访问前端界面。
 
 在log文件中查看工具调用和服务器的输出。
+
+在frontend/public 下添加background.jpg可设置背景。
 
 ## 结果
 
