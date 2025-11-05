@@ -252,42 +252,52 @@ async def ask_question_stream(request: Request, user_request: QuestionRequest):
             yield json.dumps({"event": "status", "data": "正在RAG搜索中，查找相关角色信息..."}, ensure_ascii=False) + "\n"
             print("[STREAM] 开始第一阶段：RAG 搜索")
             
-            async with streamablehttp_client(rag_url) as (read_stream, write_stream, get_session_id):
-                async with ClientSession(read_stream, write_stream) as session:
-                    await session.initialize()
-                    rag_tools = await load_mcp_tools(session)
-                    rag_agent = create_react_agent(model, rag_tools)
-                    
-                    with open(searchinrag_prompt_path, "r", encoding="utf-8") as file:
-                        template = file.read()
-                    first_input = template.format(user_question=user_question)
-                    rag_result = await rag_agent.ainvoke({"messages": [HumanMessage(content=first_input)]})
-                    base_info = rag_result["messages"][-1].content
-                    print(f"[STREAM] RAG 阶段完成，基础信息长度: {len(base_info)}")
-                    yield json.dumps({"event": "status", "data": "RAG搜索完成！"}, ensure_ascii=False) + "\n"
-                    yield json.dumps({"event": "rag_result", "data": base_info}, ensure_ascii=False) + "\n"
+            try:
+                async with streamablehttp_client(rag_url) as (read_stream, write_stream, get_session_id):
+                    async with ClientSession(read_stream, write_stream) as session:
+                        await session.initialize()
+                        rag_tools = await load_mcp_tools(session)
+                        rag_agent = create_react_agent(model, rag_tools)
+                        
+                        with open(searchinrag_prompt_path, "r", encoding="utf-8") as file:
+                            template = file.read()
+                        first_input = template.format(user_question=user_question)
+                        rag_result = await rag_agent.ainvoke({"messages": [HumanMessage(content=first_input)]})
+                        base_info = rag_result["messages"][-1].content
+                        print(f"[STREAM] RAG 阶段完成，基础信息长度: {len(base_info)}")
+                        yield json.dumps({"event": "status", "data": "RAG搜索完成！"}, ensure_ascii=False) + "\n"
+                        yield json.dumps({"event": "rag_result", "data": base_info}, ensure_ascii=False) + "\n"
+            except asyncio.CancelledError:
+                print("[STREAM] RAG 阶段被用户取消")
+                yield json.dumps({"event": "error", "data": "生成已被取消"}, ensure_ascii=False) + "\n"
+                return
 
             # --- 第二阶段：Web Search ---
             yield json.dumps({"event": "status", "data": "正在Web搜索中，获取更多相关信息..."}, ensure_ascii=False) + "\n"
             print("[STREAM] 开始第二阶段：Web 搜索")
             
-            async with streamablehttp_client(web_url) as (read_stream, write_stream, get_session_id):
-                async with ClientSession(read_stream, write_stream) as session:
-                    await session.initialize()
-                    web_tools = await load_mcp_tools(session)
-                    web_agent = create_react_agent(model, web_tools)
-                    
-                    with open(searchinweb_prompt_path, "r", encoding="utf-8") as file:
-                        template = file.read()
-                    final_input = template.format(user_question=user_question, base_info=base_info)
-                    web_result = await web_agent.ainvoke(
-                        {"messages": [HumanMessage(content=final_input)]},
-                        config={"recursion_limit": 75}
-                    )
-                    web_info = web_result["messages"][-1].content
-                    print(f"[STREAM] Web 搜索阶段完成，信息长度: {len(web_info)}")
-                    yield json.dumps({"event": "status", "data": "Web搜索完成！"}, ensure_ascii=False) + "\n"
-                    yield json.dumps({"event": "web_result", "data": web_info}, ensure_ascii=False) + "\n"
+            try:
+                async with streamablehttp_client(web_url) as (read_stream, write_stream, get_session_id):
+                    async with ClientSession(read_stream, write_stream) as session:
+                        await session.initialize()
+                        web_tools = await load_mcp_tools(session)
+                        web_agent = create_react_agent(model, web_tools)
+                        
+                        with open(searchinweb_prompt_path, "r", encoding="utf-8") as file:
+                            template = file.read()
+                        final_input = template.format(user_question=user_question, base_info=base_info)
+                        web_result = await web_agent.ainvoke(
+                            {"messages": [HumanMessage(content=final_input)]},
+                            config={"recursion_limit": 75}
+                        )
+                        web_info = web_result["messages"][-1].content
+                        print(f"[STREAM] Web 搜索阶段完成，信息长度: {len(web_info)}")
+                        yield json.dumps({"event": "status", "data": "Web搜索完成！"}, ensure_ascii=False) + "\n"
+                        yield json.dumps({"event": "web_result", "data": web_info}, ensure_ascii=False) + "\n"
+            except asyncio.CancelledError:
+                print("[STREAM] Web 搜索阶段被用户取消")
+                yield json.dumps({"event": "error", "data": "生成已被取消"}, ensure_ascii=False) + "\n"
+                return
 
             # --- 第三阶段：小说生成（流式）---
             yield json.dumps({"event": "status", "data": "开始生成小说..."}, ensure_ascii=False) + "\n"
@@ -319,6 +329,10 @@ async def ask_question_stream(request: Request, user_request: QuestionRequest):
                 print("[STREAM] 发送完成信号")
                 yield json.dumps({"event": "done", "data": ""}, ensure_ascii=False) + "\n"
                 
+            except asyncio.CancelledError:
+                print("[STREAM] 小说生成阶段被用户取消")
+                yield json.dumps({"event": "error", "data": "生成已被取消"}, ensure_ascii=False) + "\n"
+                return
             except Exception as e:
                 error_msg = f"Error in post_writer: {type(e).__name__}: {str(e)}"
                 print(f"[STREAM ERROR] {error_msg}")
@@ -326,6 +340,11 @@ async def ask_question_stream(request: Request, user_request: QuestionRequest):
                 print(f"[STREAM ERROR] Full Traceback:\n{traceback_str}")
                 yield json.dumps({"event": "error", "data": error_msg}, ensure_ascii=False) + "\n"
 
+        except asyncio.CancelledError:
+            # 专门处理用户取消操作
+            print("[STREAM] 流式生成被用户取消")
+            yield json.dumps({"event": "cancelled", "data": "生成已被用户取消"}, ensure_ascii=False) + "\n"
+            return
         except ExceptionGroup as eg:
             # 处理 ExceptionGroup
             error_msg = f"ExceptionGroup: {len(eg.exceptions)} sub-exceptions"
