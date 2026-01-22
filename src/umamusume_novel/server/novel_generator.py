@@ -40,8 +40,8 @@ import json
 import argparse
 import asyncio
 import traceback
-from langchain.prompts import PromptTemplate
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import OpenAI, ChatOpenAI
 from openai import OpenAI as OpenAIClient
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessageChunk
@@ -52,10 +52,10 @@ from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
 from starlette.middleware.cors import CORSMiddleware
 
-from langchain.agents import  AgentExecutor
+
 from langgraph.prebuilt import create_react_agent
 
-from langchain.prompts import MessagesPlaceholder
+from langchain_core.prompts import MessagesPlaceholder
 from mcp.client.sse import sse_client
 from mcp.client.streamable_http import streamablehttp_client
 from mcp import ClientSession

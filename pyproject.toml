@@ -6,33 +6,34 @@ readme = "README.md"
 requires-python = ">=3.12"
 
 dependencies = [
-"bs4==0.0.2",
-"chromadb==1.0.15",
-"crawl4ai==0.6.3",
-"fastapi-mcp==0.3.4",
-"dashscope==1.23.7",
-"faiss-cpu==1.11.0",
-"fastapi==0.115.12",
-"google-api-python-client==2.174.0",
-"langchain==0.3.25",
-"langchain-community==0.3.24",
-"langchain-core==0.3.59",
-"langchain-experimental==0.3.4",
-"langchain-openai==0.3.5",
-"langgraph==0.3.31",
-"langchain-mcp-adapters==0.1.8",
-"mcp==1.10.1",
-"mcp-server==0.1.4",
-"openai==1.75.0",
-"playwright==1.53.0",
-"pydantic==2.11.3",
-"pydantic-core==2.33.1",
-"python-dotenv==1.1.1",
-"pyyaml==6.0.2",
-"sentence-transformers==5.0.0",
-"tf-playwright-stealth==1.2.0",
-"torch==2.7.1",
-"uvicorn==0.34.2",
+    "bs4>=0.0.2",
+    "chromadb>=1.0.15",
+    "crawl4ai>=0.6.3",
+    "fastapi-mcp>=0.3.4",
+    "dashscope>=1.23.7",
+    "faiss-cpu>=1.11.0",
+    "fastapi>=0.115.12",
+    "google-api-python-client>=2.174.0",
+    "langchain>=0.3.25",
+    "langchain-community>=0.3.24",
+    "langchain-core>=0.3.59",
+    "langchain-experimental>=0.3.4",
+    "langchain-openai>=0.3.5",
+    "langgraph>=0.3.31",
+    "langchain-mcp-adapters>=0.1.8",
+    "mcp>=1.10.1",
+    "mcp-server>=0.1.4",
+    "openai>=1.75.0",
+    "playwright>=1.53.0",
+    "pydantic>=2.11.3",
+    "pydantic-core>=2.33.1",
+    "python-dotenv>=1.1.1",
+    "pyyaml>=6.0.2",
+    "sentence-transformers>=5.0.0",
+    "tf-playwright-stealth>=1.2.0",
+    "torch>=2.7.1",
+    "uvicorn>=0.34.2",
+    "umamusume-web-crawler",
 ]
 
 [tool.setuptools.packages.find]
@@ -40,6 +41,9 @@ where = ["src"]
 
 [tool.setuptools.package-dir]
 "" = "src" 
+
+[tool.uv.sources]
+umamusume-web-crawler = { git = "https://github.com/quantumxiaol/umamusume-web-crawler" }
 
 [build-system]
 requires = ["setuptools>=45", "wheel"]

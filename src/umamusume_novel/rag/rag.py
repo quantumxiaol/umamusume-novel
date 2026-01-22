@@ -5,10 +5,10 @@ from typing import List, Optional, Dict, Any
 from langchain_community.vectorstores import FAISS
 # from langchain.embeddings import HuggingFaceEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 # from langchain.document_loaders import CSVLoader, TextLoader, PyMuPDFLoader, DirectoryLoader
 from langchain_community.document_loaders import CSVLoader, TextLoader, PyMuPDFLoader, DirectoryLoader
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
 from ..config import config
 class RAGManager:
     def __init__(self):

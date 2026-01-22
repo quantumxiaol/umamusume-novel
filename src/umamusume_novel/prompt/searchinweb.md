@@ -14,11 +14,10 @@
 你要根据用户问题和RAG工具获取到的基础信息，使用正确的真实存在的角色名称，进行搜索。
 
 你需要做如下事情:
-
-- 可以先使用web search工具搜索哔哩哔哩wiki（Bilibili wiki）和萌娘百科（moegirl wiki）。
+- 可以使用'biligame_wiki_seaech', 'moegirl_wiki_search'搜索角色链接，'web_search_google'作为补充搜索。
 - 如果涉及到多个角色，请进行多次搜索。
-- 注意分辨真实有效的搜索链接，链接应该有“biligame”或者“meogirl”，这才是真实的结果。
-- 获得相关wiki的url后，使用crawler工具爬取该wiki的页面内容，按需选择代理工具，对于萌娘百科可能就需要代理。
+- 注意分辨真实有效的搜索链接，链接应该有“biligame”或者“moegirl”，这才是真实的结果。
+- 获得相关wiki的url后，使用crawler工具爬取该wiki的页面内容，可以采用`crawl_biligame_wiki`或者`crawl_moegirl_wiki`工具。
 - 你需要获取有关该角色的资料，包括但不限于角色设定、个人剧情、角色故事、角色原型生涯等。
 - 在此阶段**不需要创作小说**，返回详细的资料即可。
 

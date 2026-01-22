@@ -28,9 +28,11 @@ class Config:
     USER_AGENT: str = os.getenv("USER_AGENT", "MyApp/1.0")
 
     # ================Prompt Settings ==================
-    _prompt_directory = os.getenv("PROMPT_DIRECTORY", "./resources/prompts")
+    # ================Prompt Settings ==================
+    # Default to "prompt" directory in the same package as config.py
+    _prompt_directory = os.getenv("PROMPT_DIRECTORY", "prompt")
     PROMPT_DIRECTORY:str = os.path.abspath(
-        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), _prompt_directory.lstrip("./"))
+        os.path.join(os.path.dirname(__file__), _prompt_directory)
     )
 
     # ================== RAG Settings ==================

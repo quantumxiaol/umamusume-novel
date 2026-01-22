@@ -1,182 +1,245 @@
 """
 Search And Crawl MCP Server
 
-python webinfomcp.py --http -p 7777
-to activate the MCP server
-
-    playwright install
-
-
+python -m umamusume_novel.web.webinfomcp --http -p 7777
 """
-import os
-import asyncio
-import sys
+from __future__ import annotations
+
 import argparse
-import uvicorn
-import argparse
-import uvicorn
 import contextlib
-from mcp.server import FastMCP
+import sys
+from urllib.parse import parse_qs, quote, unquote, urlparse
 from collections.abc import AsyncIterator
+
+import uvicorn
+from mcp.server import Server
 from mcp.server.fastmcp import FastMCP
-from starlette.applications import Starlette
 from mcp.server.sse import SseServerTransport
+from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
+from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.routing import Mount, Route
 from starlette.types import Receive, Scope, Send
-from mcp.server import Server
-from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 
-from typing import List,Dict
-from ..crawler.crawlonweb import get_uma_info_bing,get_uma_info_on_bilibili_wiki
-from ..crawler.crawlonweb import get_uma_info_bing_biliwiki,get_uma_info_bing_moegirl
+from umamusume_web_crawler.web.biligame import (
+    fetch_biligame_wikitext_expanded,
+    search_biligame_titles,
+)
+from umamusume_web_crawler.web.moegirl import (
+    fetch_moegirl_wikitext_expanded,
+    search_moegirl_titles,
+)
+from umamusume_web_crawler.web.parse_wiki_infobox import (
+    parse_wiki_page,
+    wiki_page_to_llm_markdown,
+)
+from umamusume_web_crawler.web.search import (
+    google_search_page_urls,
+    google_search_urls,
+)
 
-from ..crawler.crawlonweb import _crawl_page,_crawl_page_proxy
-from ..search.bingsearch import search_bing
-from ..search.googlesearch import google_search_urls
+# Import configs
+try:
+    from umamusume_web_crawler.config import config as crawler_config
+    from ..config import config as local_config
+
+    # Apply local configuration to the library
+    crawler_config.apply_overrides(
+        google_api_key=local_config.GOOGLE_API_KEY,
+        google_cse_id=local_config.GOOGLE_CSE_ID,
+        http_proxy=local_config.HTTP_PROXY,
+        https_proxy=local_config.HTTPS_PROXY,
+    )
+except ImportError:
+    # Log warning if running as script without package context, though typical usage is -m
+    print("WARNING: Could not import local config. Ensure you run this as a module: python -m umamusume_novel.web.webinfomcp")
 
 
-mcp = FastMCP("Web Search MCP")
+mcp = FastMCP("Umamusume Web MCP")
 
-@mcp.tool(description="""
-Performs a web search with google for the given query and returns a list of relevant URLs with ranking.
-Use this tool first to find potential pages about a character, event, or topic.
-The model can then choose which URLs to crawl using the crawl_web_page tool.
+_BILIGAME_BASE_URL = "https://wiki.biligame.com/umamusume/"
+_MOEGIRL_BASE_URL = "https://mzh.moegirl.org.cn/"
+
+
+def _title_from_url(value: str) -> str:
+    if not value.startswith("http://") and not value.startswith("https://"):
+        return value
+    parsed = urlparse(value)
+    if parsed.path.endswith("/index.php"):
+        params = parse_qs(parsed.query)
+        title = params.get("title", [""])[0]
+        if title:
+            return title
+    return unquote(parsed.path.strip("/").split("/")[-1])
+
+
+def _build_wiki_url(base_url: str, title: str) -> str:
+    return f"{base_url}{quote(title)}"
+
+
+@mcp.tool(
+    description="""
+Performs a web search with Google for the given query and returns a list of URLs.
+Use this tool first to find pages about a character or topic.
 Returns up to 5 results ranked by relevance.
 
-You can use site:wiki.biligame.com/umamusume to search for pages within the Bilibili wiki.
-You can use site:site:mzh.moegirl.org.cn to search for pages within the moegirl wiki.
-          
-Parameters:
-- query: The full search query, including keywords and site restrictions if needed.
-       Example: "爱慕织姬 site:wiki.biligame.com/umamusume"
-""")
-async def web_search_google(query: str) -> Dict[str, List[Dict[str, str]]]:
-    """
-    Search the web using Google Custom Search API and return ranked URLs.
-    Does NOT crawl the pages.
-    """
+Example queries:
+- "爱慕织姬 site:wiki.biligame.com/umamusume"
+- "爱慕织姬 site:mzh.moegirl.org.cn"
+"""
+)
+async def web_search_google(query: str) -> dict:
     try:
-        # 使用 Google 搜索（更稳定）
-        results = google_search_urls(search_term=query, num=5)
-        # 如果使用 Bing，也可以替换为 search_bing 并提取 links
-        # results = [{'url': r['link'], 'priority': i+1} for i, r in enumerate(search_bing(query)['results'])]
+        results = google_search_urls(query, num=5)
+        return {
+            "results": [
+                {"url": item["url"], "priority": str(item["priority"])}
+                for item in results
+            ]
+        }
+    except Exception as exc:
+        return {"results": [], "error": str(exc)}
+
+
+@mcp.tool(
+    description="""
+Search Biligame Wiki for a character name and return candidate wiki links.
+"""
+)
+async def biligame_wiki_seaech(
+    keyword: str, limit: int = 5, use_proxy: bool | None = None
+) -> dict:
+    try:
+        titles = await search_biligame_titles(
+            keyword, limit=limit, use_proxy=use_proxy
+        )
         results = [
-            {"url": item["url"], "priority": str(item["priority"])}
-            for item in results
-        ]
-        print("\nGoogle:\n")
-        print(query)
-        print(results)
-        return {
-            "results": results,
-            "error": None
-        }
-
-    except Exception as e:
-        return {
-            "results": [],
-            "error": str(e)
-        }
-
-@mcp.tool(description="""
-Performs a web search with bing engine for the given query and returns a list of relevant URLs with ranking.
-Use this tool first to find potential pages about a character, event, or topic.
-The model can then choose which URLs to crawl using the crawl_web_page tool.
-Returns up to 5 results ranked by relevance.
-
-You can use site:wiki.biligame.com/umamusume to search for pages within the Bilibili wiki.
-You can use site:site:mzh.moegirl.org.cn to search for pages within the moegirl wiki.
-          
-Parameters:
-- query: The full search query, including keywords and site restrictions if needed.
-       Example: "爱慕织姬 site:wiki.biligame.com/umamusume"
-""")
-async def web_search_bing(query: str) -> Dict[str, List[Dict[str, str]]]:
-    """
-    Search the web using Bing Search API and return ranked URLs.
-    Does NOT crawl the pages.
-    Returns results in the format: {"results": [{"url": "...", "rank": "1"}, ...]}
-    """
-    try:
-        bing_response = search_bing(query)
-        
-        # 检查是否有错误
-        if "error" in bing_response:
-            return {
-                "results": [],
-                "error": bing_response["error"]
+            {
+                "title": title,
+                "url": _build_wiki_url(_BILIGAME_BASE_URL, title),
+                "priority": str(idx + 1),
             }
-        
-        # 提取 results 列表
-        bing_results = bing_response.get("results", [])
-        
-        # 转换格式：从 Bing 的 result_id/title/snippet/link 转为 url/rank
-        formatted_results = []
-        for item in bing_results:
-            formatted_results.append({
-                "url": item["link"],       # 使用 link 作为 url
-                "rank": str(item["result_id"])
-            })
-        print("\nBing:\n")
-        print(query)
-        print(formatted_results)
-        
-        return {
-            "results": formatted_results
-        }
+            for idx, title in enumerate(titles)
+        ]
+        return {"results": results}
+    except Exception as exc:
+        return {"results": [], "error": str(exc)}
 
-    except Exception as e:
-        return {
-            "results": [],
-            "error": str(e)
-        }
 
-@mcp.tool(description="""
-          Crawl a page from url and return the result as markdown.
-          For website in mainland china, please use this tool.
-          """,
+@mcp.tool(
+    description="""
+Search Moegirl Wiki for a character name and return candidate wiki links.
+"""
 )
-async def crawl_page(url: str):
+async def moegirl_wiki_search(
+    keyword: str, limit: int = 5, use_proxy: bool | None = None
+) -> dict:
     try:
-        result=await _crawl_page(url)
-        # print("Raw result type:", type(result))         # 查看类型
-        # print("Raw result (first 500 chars):", str(result)[:500])  # 打印部分原始内容
-        # print(result)
-        return {
-            "status": "success",
-            "result": str(result)
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "message": str(e)
-       }
+        titles = await search_moegirl_titles(
+            keyword, limit=limit, use_proxy=use_proxy
+        )
+        results = [
+            {
+                "title": title,
+                "url": _build_wiki_url(_MOEGIRL_BASE_URL, title),
+                "priority": str(idx + 1),
+            }
+            for idx, title in enumerate(titles)
+        ]
+        return {"results": results}
+    except Exception as exc:
+        return {"results": [], "error": str(exc)}
 
 
-@mcp.tool(description="""
-          Crawl a page from url via local proxy,
-          able to access wikipedia ,github .etc,
-          and return the result as markdown
-          """,
+@mcp.tool(
+    description="""
+Crawl a Bilibili Wiki page via API and return the parsed Markdown output.
+Use this for wiki.biligame.com/umamusume pages. Supports optional transclusion expansion.
+"""
 )
-async def crawl_page_via_proxy(url: str):
+async def crawl_biligame_wiki(
+    url: str,
+    max_depth: int = 1,
+    max_pages: int = 5,
+    use_proxy: bool | None = None,
+) -> dict:
     try:
-        print("start crawl_page_via_proxy")
-        result=await _crawl_page_proxy(url)
-        # print("Raw result type:", type(result))         # 查看类型
-        # print("Raw result (first 500 chars):", str(result)[:500])  # 打印部分原始内容
-        # print(result)
-        return {
-            "status": "success",
-            "result": str(result)
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "message": str(e)
-       }
+        wikitext = await fetch_biligame_wikitext_expanded(
+            url,
+            max_depth=max_depth,
+            max_pages=max_pages,
+            use_proxy=use_proxy,
+        )
+        page = parse_wiki_page(wikitext, site="biligame")
+        heading = _title_from_url(url)
+        markdown = wiki_page_to_llm_markdown(heading, page, site="biligame")
+        return {"status": "success", "result": markdown}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
 
+
+@mcp.tool(
+    description="""
+Crawl a Moegirl Wiki page via API and return the parsed Markdown output.
+Use this for mzh.moegirl.org.cn pages. Supports optional transclusion expansion.
+"""
+)
+async def crawl_moegirl_wiki(
+    url: str,
+    max_depth: int = 1,
+    max_pages: int = 5,
+    use_proxy: bool | None = None,
+) -> dict:
+    try:
+        wikitext = await fetch_moegirl_wikitext_expanded(
+            url,
+            max_depth=max_depth,
+            max_pages=max_pages,
+            use_proxy=use_proxy,
+        )
+        page = parse_wiki_page(wikitext, site="moegirl")
+        heading = _title_from_url(url)
+        markdown = wiki_page_to_llm_markdown(heading, page, site="moegirl")
+        return {"status": "success", "result": markdown}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
+
+
+@mcp.tool(
+    description="""
+Fetch Google search result page HTML and extract result links.
+Use this when Google API is unavailable and you need simple link extraction.
+"""
+)
+async def crawl_google_page(
+    query: str, num: int = 5, use_proxy: bool | None = None
+) -> dict:
+    try:
+        results = google_search_page_urls(query, num=num, use_proxy=use_proxy)
+        return {
+            "results": [
+                {"url": item["url"], "priority": str(item["priority"])}
+                for item in results
+            ]
+        }
+    except Exception as exc:
+        return {"results": [], "error": str(exc)}
+
+
+@mcp.tool(
+    description="""
+Crawl a general web page using headless browser (MarkItDown/Crawl4AI).
+Use this for non-wiki pages or when wiki API fails.
+"""
+)
+async def crawl_page(url: str, capture_screenshot: bool = False, use_proxy: bool | None = None) -> dict:
+    try:
+        # Import dynamically to avoid top-level dependency if strictly using wiki tools
+        from umamusume_web_crawler.web.crawler import crawl_page as lib_crawl_page
+        result = await lib_crawl_page(url)
+        return {"status": "success", "result": str(result)}
+    except Exception as exc:
+        return {"status": "error", "message": str(exc)}
 
 
 def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlette:
@@ -207,13 +270,12 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
 
     @contextlib.asynccontextmanager
     async def lifespan(app: Starlette) -> AsyncIterator[None]:
-        """Context manager for session manager."""
         async with session_manager.run():
-            print("Application started with StreamableHTTP session manager!")
+            print("MCP Web server started (StreamableHTTP).")
             try:
                 yield
             finally:
-                print("Application shutting down...")
+                print("MCP Web server shutting down.")
 
     return Starlette(
         debug=debug,
@@ -225,41 +287,24 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
         lifespan=lifespan,
     )
 
-web_mcp_app = create_starlette_app(mcp._mcp_server, debug=True)
-# Main entry point
-def main():
-    mcp_server = mcp._mcp_server
 
-    parser = argparse.ArgumentParser(description="Run Search and Crawl MCP server")
-
-    parser.add_argument(
-        "--http",
-        action="store_true",
-        help="Run the server with Streamable HTTP and SSE transport rather than STDIO (default: False)",
-    )
-    parser.add_argument(
-        "--sse",
-        action="store_true",
-        help="(Deprecated) An alias for --http (default: False)",
-    )
-    parser.add_argument(
-        "--host", default=None, help="Host to bind to (default: 127.0.0.1)"
-    )
-    parser.add_argument(
-        "--port","-p", type=int, default=None, help="Port to listen on (default: 8887)"
-    )
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Run Umamusume Web MCP server")
+    parser.add_argument("--http", action="store_true", help="Use StreamableHTTP + SSE")
+    parser.add_argument("--sse", action="store_true", help="Alias for --http")
+    parser.add_argument("--host", default=None, help="Host to bind to")
+    parser.add_argument("--port", "-p", type=int, default=None, help="Port to listen on")
     args = parser.parse_args()
-    print(f"🚀 Starting server on port {args.port}")
-    use_http = args.http or args.sse
 
+    use_http = args.http or args.sse
     if not use_http and (args.host or args.port):
         parser.error(
-            "Host and port arguments are only valid when using streamable HTTP or SSE transport (see: --http)."
+            "Host and port are only valid when using Streamable HTTP (see: --http)."
         )
         sys.exit(1)
 
     if use_http:
-        starlette_app = create_starlette_app(mcp_server, debug=True)
+        starlette_app = create_starlette_app(mcp._mcp_server, debug=True)
         uvicorn.run(
             starlette_app,
             host=args.host if args.host else "127.0.0.1",
@@ -267,6 +312,9 @@ def main():
         )
     else:
         mcp.run()
+
+
+web_mcp_app = create_starlette_app(mcp._mcp_server, debug=True)
 
 
 if __name__ == "__main__":

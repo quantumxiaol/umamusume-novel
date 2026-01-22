@@ -16,8 +16,8 @@ import json
 import argparse
 import uvicorn
 
-from langchain.prompts import PromptTemplate
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import OpenAI, ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain.schema.runnable import RunnableSequence
@@ -25,7 +25,7 @@ from typing import TypedDict, List
 from langgraph.prebuilt import create_react_agent
 from langchain.schema import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
@@ -39,7 +39,7 @@ from langchain_openai import OpenAIEmbeddings
 from dashscope import embeddings
 from langchain_community.document_loaders import TextLoader,CSVLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from starlette.middleware.cors import CORSMiddleware
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain import hub

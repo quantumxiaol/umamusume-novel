@@ -12,22 +12,24 @@ import json
 import argparse
 import uvicorn
 
-from langchain.prompts import PromptTemplate
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import OpenAI, ChatOpenAI
 from typing import TypedDict, List
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pydantic import BaseModel
-from langchain.chains import RetrievalQA
 from langchain_openai import ChatOpenAI
 from langchain_community.vectorstores import FAISS
 
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+
 from langchain_community.document_loaders import TextLoader,CSVLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from starlette.middleware.cors import CORSMiddleware
 
-from langchain.schema import Document
+from langchain_core.documents import Document
 # from langchain.embeddings import HuggingFaceEmbeddings
 # from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.embeddings import HuggingFaceEmbeddings
@@ -83,13 +85,15 @@ prompt_template = ChatPromptTemplate.from_messages([
     ("user", "{question}")
 ])
 
-# 定义RetrievalQA链
-qa_chain = RetrievalQA.from_chain_type(
-    llm=llm,
-    chain_type="stuff",
-    chain_type_kwargs={"prompt": prompt_template},
-    retriever=retriever,
-    return_source_documents=True
+# 定义LCEL Chain
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
+qa_chain = (
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    | prompt_template
+    | llm
+    | StrOutputParser()
 )
 
 
@@ -118,12 +122,7 @@ async def rag(question: str):
         print(user_question)
 
         # 通过RAG链生成回答
-        raw_answer = qa_chain.invoke(user_question)
-
-        if isinstance(raw_answer, dict):
-            answer_text = raw_answer.get("result", str(raw_answer))  # 提取 result 字段
-        else:
-            answer_text = raw_answer
+        answer_text = qa_chain.invoke(user_question)
 
         # 返回答案
         print(answer_text)
@@ -185,14 +184,14 @@ async def reload_rag(force_rebuild: bool = True):
         initialize_rag(mode="auto", force_rebuild=force_rebuild)
         
         # 更新qa_chain的retriever
+        # 更新qa_chain的retriever
         global qa_chain, retriever
         retriever = rag_manager.vectorstore.as_retriever(search_kwargs={"k": 10})
-        qa_chain = RetrievalQA.from_chain_type(
-            llm=llm,
-            chain_type="stuff",
-            chain_type_kwargs={"prompt": prompt_template},
-            retriever=retriever,
-            return_source_documents=True
+        qa_chain = (
+            {"context": retriever | format_docs, "question": RunnablePassthrough()}
+            | prompt_template
+            | llm
+            | StrOutputParser()
         )
         
         return {
