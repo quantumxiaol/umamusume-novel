@@ -128,7 +128,7 @@ RAG的基本流程包括三个主要步骤：索引、检索和生成。在索�
 
 ### Web Crawler
 
-[Clawl4ai](https://github.com/unclecode/crawl4ai)提供为 LLM、AI Agent和数据管道量身定制的快速、AI 就绪的 Web 爬虫。Crawl4AI 开源、灵活且专为实时性能而构建，为开发人员提供无与伦比的速度、精度和部署便利性。
+使用 `umamusume-web-crawler` 库。该库封装了针对 **Bilibili Wiki (wiki.biligame.com)** 和 **萌娘百科 (mzh.moegirl.org.cn)** 的专用爬虫工具，支持通过 MediaWiki API 高效获取结构化文本，避免了传统的 HTML 解析问题。同时也保留了基于 Crawl4AI 的通用网页爬取能力。
 
 ### Web Search
 
@@ -158,13 +158,12 @@ Custom Search JSON API 每天免费提供 100 次搜索查询。额外请求的�
         |-LICENSE                     # 项目许可证文件
         |-
         |-logs/                       # 日志文件存放目录
-        |   |-rag.log                 # RAG MCP服务日志
-        |   |-web.log                 # Web MCP服务日志
-        |   |-novel_generator.log     # Server服务日志
+        |   |-rag_mcp.log             # RAG MCP服务日志
+        |   |-web_mcp.log             # Web MCP服务日志
+        |   |-server.log              # Server服务日志
         |-
         |-resources/                  # 资源文件存放目录
         |   |-docs/                   # RAG所需文档
-        |   |-prompt/                 # Agent的提示词库
         |   |-results/                # 工具运行结果，生成的一些小说样本
         |-
         |-scripts/                    # 包含所有Shell脚本的目录
@@ -176,24 +175,19 @@ Custom Search JSON API 每天免费提供 100 次搜索查询。额外请求的�
         |-src/                        # 源代码根目录
         |   |-umamusume_novel/        # 主项目包
         |       |-client/             # 客户端模块
-        |       |   |-__init__.py     
+        |       |   |-__init__.py
         |       |   |-umamusume_client.py  # 客户端实现文件
         |       |   |-cli.py               # 命令行调用
         |       |
-        |       |-crawler/            # 爬虫模块
-        |       |   |-__init__.py     
-        |       |   |-crawlonweb.py   # 爬虫
+        |       |-prompt/             # Agent的提示词库
+        |       |   |-searchinweb.md
+        |       |   |-writenovel.md
+        |       |   |-...
         |       |
         |       |-rag/                # RAG相关模块
-        |       |   |-__init__.py     
+        |       |   |-__init__.py
         |       |   |-rag.py          # RAG核心逻辑实现
         |       |   |-raginfomcp.py   # RAG MCP服务实现
-        |       |
-        |       |-search/             # 搜索引擎模块
-        |       |   |-__init__.py     
-        |       |   |-bingsearch.py   # Bing搜索引擎接口
-        |       |   |-baidusearch.py  # Baidu搜索引擎接口
-        |       |   |-googlesearch.py # Google搜索引擎接口
         |       |
         |       |-server/             # 服务端模块
         |       |   |-__init__.py     # 初始化文件
@@ -203,42 +197,17 @@ Custom Search JSON API 每天免费提供 100 次搜索查询。额外请求的�
         |       |
         |       |-web/                # Web相关模块
         |           |-__init__.py     # 初始化文件
-        |           |-config.py       # Web配置文件
-        |           |-main.py         # Web应用主入口
-        |           |-webinfomcp.py   # Web MCP服务实现
+        |           |-webinfomcp.py   # Web MCP服务实现 (使用 umamusume-web-crawler 库)
         |-frontend/
-        |   |- public/                    # 静态资源文件
-        |   |   |- favicon.ico            # 网站图标
-        |   |
-        |   |- src/                       # 前端源代码根目录
-        |   |   |- assets/                # 组件内使用的静态资源 (如图片、样式)
-        |   |   |
-        |   |   |- services/              # 封装与后端 API 交互的逻辑
-        |   |   |   |- api.js             # API 请求函数
-        |   |   |
-        |   |   |- stores/                # Pinia 状态管理 stores
-        |   |   |   |- novelStore.js      # 管理小说生成相关状态
-        |   |   |
-        |   |   |
-        |   |   |- App.vue                # 根 Vue 组件
-        |   |   |- main.js                # Vue 应用入口文件
-        |   |
-        |   |- index.html                 # 主页面 HTML 模板
-        |   |- .env                       # 环境变量配置文件 
-        |   |- .env.example               # 环境变量配置示例文件
-        |   |- vite.config.js             # Vite 构建工具配置文件
-        |   |- package.json               # 项目配置、依赖和脚本定义
-        |   |- pnpm-lock.yaml             # pnpm 生成的依赖锁定文件
-        |   |- README.md                  # 前端子项目的说明文档
+        |   |- ... (前端代码)
         |-
         |-tests/                      # 测试脚本
-        |   |-testonbing.py           # 测试bing搜索
-        |   |-testongoogle.py         # 测试谷歌搜索
-        |   |-test_stream_mcp.py      # 测试MCP服务
+        |   |-test_search.py          # 测试搜索功能
+        |   |-test_crawler.py         # 测试爬虫功能
+        |   |-...
         |-
-        |-pyproject.toml              # 项目配置文件  
+        |-pyproject.toml              # 项目配置文件
         |-uv.lock
-        |-requirements_lock.txt       # 确切的包版本信息
         |-requirements.txt            # 项目依赖项文件，列出所有必需的Python包
         |-README.md                   # 项目说明文档，包括安装、运行指南等
 
