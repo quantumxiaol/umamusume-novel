@@ -12,7 +12,20 @@ export default {
     generate: '生成小说',
     generating: '生成中...',
     cancel: '取消生成',
-    clear: '清除结果'
+    clear: '清除结果',
+    history: '历史记录',
+    save: '保存到历史',
+    download: '下载 MD',
+    delete: '删除'
+  },
+  history: {
+    title: '历史记录',
+    empty: '暂无历史记录',
+    load: '加载',
+    clearAll: '清除所有',
+    confirmLoad: '加载历史记录将覆盖当前内容，确定要继续吗？',
+    confirmDelete: '确定要删除这条记录吗？',
+    confirmClearAll: '确定要清除所有历史记录吗？'
   },
   output: {
     ragResult: 'RAG 搜索结果',

@@ -6,14 +6,16 @@ export const useNovelStore = defineStore('novel', {
   state: () => ({
     prompt: '',
     generatedNovel: '',
-    characterImage: '', 
+    characterImage: '',
     isLoading: false,
     error: null,
     streamMode: false, // 是否使用流式模式
     streamCancelled: false, // 是否取消流式请求
     currentStatus: '', // 当前状态信息（用于显示进度）
     ragResult: '', // RAG 搜索结果
+    ragResult: '', // RAG 搜索结果
     webResult: '', // Web 搜索结果
+    history: [], // 历史记录
   }),
 
   actions: {
@@ -45,11 +47,11 @@ export const useNovelStore = defineStore('novel', {
         } else {
           // 非流式生成
           const data = await apiGenerateNovel(this.prompt);
-          
+
           // 假设后端返回格式为 { response: "...", image_url?: "..." }
           this.generatedNovel = data.response || '未收到小说内容。';
           this.characterImage = data.image_url || ''; // 如果有图片URL则设置
-          
+
           console.log('Novel generated successfully.');
         }
       } catch (err) {
@@ -78,17 +80,17 @@ export const useNovelStore = defineStore('novel', {
             this.currentStatus = data || '';
             console.log('[Store] Status:', this.currentStatus);
             break;
-          
+
           case 'rag_result':
             this.ragResult = data || '';
             console.log('[Store] RAG result received, length:', this.ragResult.length);
             break;
-          
+
           case 'web_result':
             this.webResult = data || '';
             console.log('[Store] Web result received, length:', this.webResult.length);
             break;
-          
+
           case 'token':
             // 流式接收小说内容
             if (data) {
@@ -100,20 +102,20 @@ export const useNovelStore = defineStore('novel', {
               }
             }
             break;
-          
+
           case 'done':
             console.log('[Store] Stream completed');
             this.currentStatus = '生成完成！';
             this.isLoading = false;
             break;
-          
+
           case 'error':
             this.error = data || '流式生成过程中发生错误。';
             this.currentStatus = '';
             console.error('[Store] Stream error:', this.error);
             this.isLoading = false;
             break;
-          
+
           default:
             console.warn('[Store] Unknown event:', event);
         }
@@ -133,6 +135,55 @@ export const useNovelStore = defineStore('novel', {
       this.ragResult = '';
       this.webResult = '';
       // 注意：不清除 prompt，用户可能想重新生成
+    },
+    // 历史记录相关 Action
+    initHistory() {
+      const storedHistory = localStorage.getItem('novelHistory');
+      if (storedHistory) {
+        try {
+          this.history = JSON.parse(storedHistory);
+        } catch (e) {
+          console.error('Failed to parse history from localStorage', e);
+          this.history = [];
+        }
+      }
+    },
+    saveToHistory() {
+      if (!this.prompt && !this.generatedNovel) return;
+
+      const newEntry = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        prompt: this.prompt,
+        generatedNovel: this.generatedNovel,
+        characterImage: this.characterImage,
+        ragResult: this.ragResult,
+        webResult: this.webResult,
+      };
+
+      this.history.unshift(newEntry);
+      this.persistHistory();
+    },
+    loadFromHistory(entry) {
+      if (!entry) return;
+
+      this.prompt = entry.prompt || '';
+      this.generatedNovel = entry.generatedNovel || '';
+      this.characterImage = entry.characterImage || '';
+      this.ragResult = entry.ragResult || '';
+      this.webResult = entry.webResult || '';
+      this.currentStatus = '已加载历史记录';
+    },
+    deleteFromHistory(id) {
+      this.history = this.history.filter(item => item.id !== id);
+      this.persistHistory();
+    },
+    clearHistory() {
+      this.history = [];
+      this.persistHistory();
+    },
+    persistHistory() {
+      localStorage.setItem('novelHistory', JSON.stringify(this.history));
     }
   },
 });

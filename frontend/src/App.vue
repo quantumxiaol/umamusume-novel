@@ -4,6 +4,8 @@ import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNovelStore } from '@/stores/novelStore';
 import LanguageSelector from './components/LanguageSelector.vue';
+import HistoryDrawer from './components/HistoryDrawer.vue';
+import { onMounted } from 'vue';
 
 const { t } = useI18n();
 const novelStore = useNovelStore();
@@ -25,6 +27,12 @@ const localPrompt = ref(novelStore.prompt);
 // 折叠状态
 const showRagResult = ref(false);
 const showWebResult = ref(false);
+const showHistory = ref(false);
+
+// 初始化
+onMounted(() => {
+  novelStore.initHistory();
+});
 
 // 处理输入变化
 const handlePromptInput = (event) => {
@@ -53,6 +61,30 @@ const handleClear = () => {
   novelStore.setPrompt('');
   novelStore.clearResults();
 };
+
+// 处理保存到历史
+const handleSaveToHistory = () => {
+  novelStore.saveToHistory();
+  // 可以添加一个简单的提示
+  alert(t('status.saved'));
+};
+
+// 处理下载 MD
+const handleDownload = () => {
+  const content = novelStore.generatedNovel;
+  if (!content) return;
+
+  const blob = new Blob([content], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `novel-${new Date().toISOString().slice(0, 10)}.md`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
 </script>
 
 <template>
@@ -62,7 +94,12 @@ const handleClear = () => {
       <header>
         <div class="header-content">
           <h1>{{ t('app.title') }}</h1>
-          <LanguageSelector />
+          <div class="header-actions">
+            <button class="history-btn" @click="showHistory = true">
+              {{ t('buttons.history') }}
+            </button>
+            <LanguageSelector />
+          </div>
         </div>
       </header>
 
@@ -138,7 +175,25 @@ const handleClear = () => {
 
           <!-- 生成的小说 -->
           <div class="novel-output" v-if="generatedNovel || (isLoading && streamMode)">
-            <h2>{{ t('output.novel') }}</h2>
+            <div class="output-header">
+              <h2>{{ t('output.novel') }}</h2>
+              <div class="output-actions">
+                <button 
+                  v-if="generatedNovel && !isLoading" 
+                  @click="handleSaveToHistory" 
+                  class="action-btn save-btn"
+                >
+                  {{ t('buttons.save') }}
+                </button>
+                <button 
+                  v-if="generatedNovel && !isLoading" 
+                  @click="handleDownload" 
+                  class="action-btn download-btn"
+                >
+                  {{ t('buttons.download') }}
+                </button>
+              </div>
+            </div>
             <pre class="novel-text" :class="{ 'streaming': isLoading && streamMode }">
               {{ generatedNovel || (isLoading && streamMode ? t('status.generating') : '') }}
             </pre>
@@ -156,6 +211,7 @@ const handleClear = () => {
         </div>
       </main>
     </div>
+    <HistoryDrawer :is-open="showHistory" @close="showHistory = false" />
   </div>
 </template>
 
@@ -208,7 +264,30 @@ header {
   justify-content: space-between;
   align-items: center;
   gap: 20px;
+  gap: 20px;
   flex-wrap: wrap;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.history-btn {
+  background-color: transparent;
+  border: 1px solid #42b983;
+  color: #42b983;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.history-btn:hover {
+  background-color: #42b983;
+  color: white;
 }
 
 header h1 {
@@ -344,13 +423,52 @@ header h1 {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.output-section h2 {
+
+
+.output-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   border-bottom: 2px solid #42b983;
-  padding-bottom: 10px;
   margin-top: 20px;
   margin-bottom: 15px;
+  padding-bottom: 10px;
+}
+
+.output-header h2 {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
   font-size: 1.5em;
   color: #2c3e50;
+}
+
+.output-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.action-btn {
+  padding: 5px 15px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: white;
+  transition: opacity 0.2s;
+}
+
+.action-btn:hover {
+  opacity: 0.9;
+}
+
+.save-btn {
+  background-color: #3498db;
+}
+
+.download-btn {
+  background-color: #9b59b6;
 }
 
 .novel-text {

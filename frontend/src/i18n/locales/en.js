@@ -12,7 +12,20 @@ export default {
     generate: 'Generate Novel',
     generating: 'Generating...',
     cancel: 'Cancel Generation',
-    clear: 'Clear Results'
+    clear: 'Clear Results',
+    history: 'History',
+    save: 'Save to History',
+    download: 'Download MD',
+    delete: 'Delete'
+  },
+  history: {
+    title: 'History',
+    empty: 'No history records',
+    load: 'Load',
+    clearAll: 'Clear All',
+    confirmLoad: 'Loading history will overwrite current content. Continue?',
+    confirmDelete: 'Are you sure you want to delete this record?',
+    confirmClearAll: 'Are you sure you want to clear all history?'
   },
   output: {
     ragResult: 'RAG Search Results',
