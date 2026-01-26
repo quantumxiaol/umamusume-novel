@@ -191,7 +191,8 @@ Custom Search JSON API 每天免费提供 100 次搜索查询。额外请求的�
         |       |
         |       |-server/             # 服务端模块
         |       |   |-__init__.py     # 初始化文件
-        |       |   |-novel_generator.py  # 小说生成逻辑实现
+        |       |   |-novel_generator.py  # 小说生成FASTAPI接口
+        |       |   |-novel_service.py  # 小说生成逻辑实现
         |       |   |-rag_query.py    # RAG查询逻辑实现
         |       |   |-umamusume_create_novel.py  # 服务端主程序入口
         |       |
