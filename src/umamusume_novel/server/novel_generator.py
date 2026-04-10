@@ -39,7 +39,7 @@ import uvicorn
 import json
 import argparse
 import asyncio
-import traceback
+import logging
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -48,6 +48,8 @@ from starlette.middleware.cors import CORSMiddleware
 
 from ..config import config
 from .novel_service import NovelGenerationService
+
+logger = logging.getLogger(__name__)
 
 # Initialize Config
 config.validate()
@@ -79,7 +81,7 @@ class AnswerResponse(BaseModel):
 @app.post("/ask", response_model=AnswerResponse)
 async def ask_question(request: Request, user_request: QuestionRequest):
     user_question = str(user_request.question) if user_request.question else ""
-    print(f"用户问题：{user_question}")
+    logger.info("Question received in /ask: %s", user_question)
 
     rag_url = request.app.state.rag_mcp_url
     web_url = request.app.state.web_mcp_url
@@ -87,22 +89,18 @@ async def ask_question(request: Request, user_request: QuestionRequest):
     # --- 可选：添加防御性检查 ---
     if not rag_url or not web_url:
         error_msg = "MCP server URLs are not configured. Please start the server with -r and -w arguments."
-        print(f"[ERROR] {error_msg}")
+        logger.error("%s", error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
     
     try:
         final_answer = await novel_service.process_novel_generation(user_question, rag_url, web_url)
-        print(" Final Answer:\n", final_answer)
+        logger.info("Final answer generated in /ask, length=%s", len(final_answer))
+        logger.debug("Final answer content: %s", final_answer)
         return AnswerResponse(answer=final_answer)
 
     except Exception as e: 
-        # --- 打印详细的错误信息 ---
         error_msg = f"[ERROR] Unhandled error during processing in /ask route: {type(e).__name__}: {e}"
-        print(error_msg)
-        
-        # --- 打印完整的堆栈跟踪 ---
-        traceback_str = traceback.format_exc()
-        print(f"[ERROR] Full Traceback:\n{traceback_str}")
+        logger.exception("%s", error_msg)
         
         detailed_error = f"{str(e)}\n(See server logs for full traceback)" 
         raise HTTPException(status_code=500, detail=detailed_error)
@@ -111,7 +109,7 @@ async def ask_question(request: Request, user_request: QuestionRequest):
 @app.post("/askstream")
 async def ask_question_stream(request: Request, user_request: QuestionRequest):
     user_question = str(user_request.question) if user_request.question else ""
-    print(f"[STREAM] 用户问题：{user_question}")
+    logger.info("Question received in /askstream: %s", user_question)
 
     rag_url = request.app.state.rag_mcp_url
     web_url = request.app.state.web_mcp_url
@@ -126,9 +124,7 @@ async def ask_question_stream(request: Request, user_request: QuestionRequest):
 
         except Exception as e:
             error_msg = f"{type(e).__name__}: {str(e)}"
-            print(f"[STREAM ERROR] {error_msg}")
-            traceback_str = traceback.format_exc()
-            print(f"[STREAM ERROR] Full Traceback:\n{traceback_str}")
+            logger.exception("[STREAM ERROR] %s", error_msg)
             yield json.dumps({"event": "error", "data": error_msg}, ensure_ascii=False) + "\n"
 
     # 返回流式响应

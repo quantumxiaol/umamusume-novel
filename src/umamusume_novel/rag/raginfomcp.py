@@ -11,6 +11,7 @@ import uvicorn
 import json
 import argparse
 import uvicorn
+import logging
 
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts import ChatPromptTemplate
@@ -52,6 +53,13 @@ from .rag import initialize_rag, rag_manager
 from ..config import config
 config.validate()
 
+logger = logging.getLogger(__name__)
+if not logging.getLogger().handlers:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    )
+
 model_name=config.INFO_LLM_MODEL_NAME
 api_key=config.INFO_LLM_MODEL_API_KEY
 api_base=config.INFO_LLM_MODEL_BASE_URL
@@ -67,7 +75,7 @@ llm = ChatOpenAI(
 )
 
 # 初始化RAG系统
-print("正在初始化RAG系统...")
+logger.info("正在初始化RAG系统...")
 initialize_rag(mode="auto", force_rebuild=False)
 
 # 获取检索器
@@ -119,13 +127,13 @@ async def rag(question: str):
     try:
         # 获取用户问题
         user_question = question
-        print(user_question)
+        logger.info("RAG question received: %s", user_question)
 
         # 通过RAG链生成回答
         answer_text = qa_chain.invoke(user_question)
 
         # 返回答案
-        print(answer_text)
+        logger.debug("RAG answer generated: %s", answer_text)
         return {
             "status":"success",
             "result":str(answer_text)
@@ -235,11 +243,11 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
     async def lifespan(app: Starlette) -> AsyncIterator[None]:
         """Context manager for session manager."""
         async with session_manager.run():
-            print("Application started with StreamableHTTP session manager!")
+            logger.info("Application started with StreamableHTTP session manager!")
             try:
                 yield
             finally:
-                print("Application shutting down...")
+                logger.info("Application shutting down...")
 
     return Starlette(
         debug=debug,
@@ -275,7 +283,10 @@ def main():
         "--port","-p", type=int, default=None, help="Port to listen on (default: 8887)"
     )
     args = parser.parse_args()
-    print(f"🚀 Starting server on port {args.port}")
+    logger.info(
+        "Starting RAG MCP server on port %s",
+        args.port if args.port else 7778,
+    )
     use_http = args.http or args.sse
 
     if not use_http and (args.host or args.port):

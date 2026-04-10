@@ -1,7 +1,7 @@
 import os
 import json
 import asyncio
-import traceback
+import logging
 from typing import AsyncGenerator, Dict, Any, List
 
 from langchain_openai import ChatOpenAI
@@ -13,6 +13,8 @@ from mcp import ClientSession
 from langchain_mcp_adapters.tools import load_mcp_tools
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
 
 class NovelGenerationService:
     def __init__(self):
@@ -75,12 +77,12 @@ class NovelGenerationService:
 
     async def _execute_rag_stage(self, user_question: str, rag_url: str) -> str:
         """Executes the RAG search stage."""
-        print(f"[Service] Starting RAG stage with URL: {rag_url}")
+        logger.info("Starting RAG stage with URL: %s", rag_url)
         async with streamablehttp_client(rag_url) as (read_stream, write_stream, _):
             async with ClientSession(read_stream, write_stream) as session:
                 await session.initialize()
                 rag_tools = await load_mcp_tools(session)
-                print("[Service] RAG Tools:", [tool.name for tool in rag_tools])
+                logger.info("RAG tools loaded: %s", [tool.name for tool in rag_tools])
 
                 rag_agent = create_react_agent(self.model, rag_tools)
                 with open(self.searchinrag_prompt_path, "r", encoding="utf-8") as file:
@@ -93,19 +95,19 @@ class NovelGenerationService:
                 
                 # Log tool usage
                 tool_info = self.extract_tool_info(rag_result)
-                print(f"[Service] RAG Base Info len: {len(base_info)}")
-                print(f"[Service] RAG Tool Calls: {tool_info['tool_calls']}")
+                logger.info("RAG base info length: %s", len(base_info))
+                logger.debug("RAG tool calls: %s", tool_info["tool_calls"])
                 
                 return base_info
 
     async def _execute_web_stage(self, user_question: str, base_info: str, web_url: str) -> str:
         """Executes the Web search stage."""
-        print(f"[Service] Starting Web stage with URL: {web_url}")
+        logger.info("Starting Web stage with URL: %s", web_url)
         async with streamablehttp_client(web_url) as (read_stream, write_stream, _):
             async with ClientSession(read_stream, write_stream) as session:
                 await session.initialize()
                 web_tools = await load_mcp_tools(session)
-                print("[Service] Web Tools:", [tool.name for tool in web_tools])
+                logger.info("Web tools loaded: %s", [tool.name for tool in web_tools])
 
                 web_agent = create_react_agent(self.model, web_tools)
                 with open(self.searchinweb_prompt_path, "r", encoding="utf-8") as file:
@@ -121,8 +123,8 @@ class NovelGenerationService:
                 
                 # Log tool usage
                 tool_info = self.extract_tool_info(web_result)
-                print(f"[Service] Web Tool Calls: {tool_info['tool_calls']}")
-                print(f"[Service] Web Tool Results: {tool_info['tool_results']}")
+                logger.debug("Web tool calls: %s", tool_info["tool_calls"])
+                logger.debug("Web tool results: %s", tool_info["tool_results"])
 
                 return final_answer
     
@@ -165,11 +167,11 @@ class NovelGenerationService:
             yield json.dumps({"event": "done", "data": ""}, ensure_ascii=False) + "\n"
 
         except asyncio.CancelledError:
-            print("[Service] Generator cancelled")
+            logger.info("Novel generation stream cancelled")
             yield json.dumps({"event": "cancelled", "data": "Request cancelled"}, ensure_ascii=False) + "\n"
             return
         except Exception as e:
-            traceback.print_exc()
+            logger.exception("Unhandled error during stream processing")
             yield json.dumps({"event": "error", "data": str(e)}, ensure_ascii=False) + "\n"
 
     async def process_novel_generation(self, user_question: str, rag_url: str, web_url: str) -> str:

@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import html
+import logging
 import re
 import sys
 from urllib.parse import parse_qs, quote, unquote, urlparse
@@ -40,6 +41,8 @@ from umamusume_web_crawler.web.search import (
     google_search_urls,
 )
 
+logger = logging.getLogger(__name__)
+
 # Import configs
 try:
     from umamusume_web_crawler.config import config as crawler_config
@@ -54,7 +57,10 @@ try:
     )
 except ImportError:
     # Log warning if running as script without package context, though typical usage is -m
-    print("WARNING: Could not import local config. Ensure you run this as a module: python -m umamusume_novel.web.webinfomcp")
+    logger.warning(
+        "Could not import local config. Ensure you run this as a module: "
+        "python -m umamusume_novel.web.webinfomcp"
+    )
 
 
 mcp = FastMCP("Umamusume Web MCP")
@@ -363,11 +369,11 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
     @contextlib.asynccontextmanager
     async def lifespan(app: Starlette) -> AsyncIterator[None]:
         async with session_manager.run():
-            print("MCP Web server started (StreamableHTTP).")
+            logger.info("MCP Web server started (StreamableHTTP).")
             try:
                 yield
             finally:
-                print("MCP Web server shutting down.")
+                logger.info("MCP Web server shutting down.")
 
     return Starlette(
         debug=debug,
@@ -381,6 +387,12 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
 
 
 def main() -> None:
+    if not logging.getLogger().handlers:
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        )
+
     parser = argparse.ArgumentParser(description="Run Umamusume Web MCP server")
     parser.add_argument("--http", action="store_true", help="Use StreamableHTTP + SSE")
     parser.add_argument("--sse", action="store_true", help="Alias for --http")
