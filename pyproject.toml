@@ -33,7 +33,7 @@ dependencies = [
     "tf-playwright-stealth>=1.2.0",
     "torch>=2.7.1",
     "uvicorn>=0.34.2",
-    "umamusume-web-crawler",
+    "umamusume-web-crawler>=0.2.0",
 ]
 
 [tool.setuptools.packages.find]

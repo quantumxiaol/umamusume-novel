@@ -13,7 +13,7 @@
 你要根据用户问题和RAG工具获取到的基础信息，使用正确的真实存在的角色名称，进行搜索。
 
 你需要做如下事情:
-- 可以使用'biligame_wiki_seaech', 'moegirl_wiki_search'搜索角色链接，'web_search_google'作为补充搜索。
+- 可以使用'biligame_wiki_search', 'moegirl_wiki_search'搜索角色链接，'web_search_google'作为补充搜索。
 - 如果涉及到多个角色，请进行多次搜索。
 - 注意分辨真实有效的搜索链接，链接应该有“biligame”或者“moegirl”，这才是真实的结果。
 - 获得相关wiki的url后，使用crawler工具爬取该wiki的页面内容，可以采用`crawl_biligame_wiki`或者`crawl_moegirl_wiki`工具。
